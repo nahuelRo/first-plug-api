@@ -14,8 +14,6 @@ export class TenantsService {
   async create(createTenantDto: CreateTenantDto) {
     const user = await this.findByEmail(createTenantDto.email);
 
-    console.log(user);
-
     if (user) {
       throw new BadRequestException(
         'The credentials are not valid, please try again.',
