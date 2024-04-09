@@ -12,7 +12,16 @@ export class TenantsService {
   ) {}
 
   async create(createTenantDto: CreateTenantDto) {
-    await this.findByEmail(createTenantDto.email);
+    const user = await this.findByEmail(createTenantDto.email);
+
+    console.log(user);
+
+    if (user) {
+      throw new BadRequestException(
+        'The credentials are not valid, please try again.',
+      );
+    }
+
     await this.tenantRepository.create(createTenantDto);
   }
 
@@ -21,15 +30,7 @@ export class TenantsService {
   }
 
   async findByEmail(email: string) {
-    const user = await this.tenantRepository.findOne({ email });
-
-    if (user) {
-      throw new BadRequestException(
-        'The credentials are not valid, please try again.',
-      );
-    }
-
-    return user;
+    return await this.tenantRepository.findOne({ email });
   }
 
   async update(userId: ObjectId, updateTenantDto: UpdateTenantDto) {
