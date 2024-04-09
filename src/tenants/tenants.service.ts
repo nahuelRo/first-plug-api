@@ -23,7 +23,7 @@ export class TenantsService {
   async findByEmail(email: string) {
     const user = await this.tenantRepository.findOne({ email });
 
-    if (!user) {
+    if (user) {
       throw new BadRequestException(
         'The credentials are not valid, please try again.',
       );
