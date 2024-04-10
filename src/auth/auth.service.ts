@@ -48,6 +48,10 @@ export class AuthService {
   async validateUser(loginDto: LoginDto) {
     const user = await this.tenantService.findByEmail(loginDto.email);
 
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+
     const authorized = await this.validatePassword(
       { salt: user.salt, password: user.password },
       loginDto.password,
