@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, ObjectId } from 'mongoose';
 import { Tenant } from './schemas/tenant.schema';
 import { CreateTenantDto, UpdateTenantDto } from './dto';
+import { CreateTenantByProvidersDto } from './dto/create-tenant-by-providers.dto';
 
 @Injectable()
 export class TenantsService {
@@ -21,6 +22,22 @@ export class TenantsService {
     }
 
     await this.tenantRepository.create(createTenantDto);
+  }
+
+  async createByProviders(
+    createTenantByProvidersDto: CreateTenantByProvidersDto,
+  ) {
+    const user = await this.findByEmail(createTenantByProvidersDto.email);
+
+    if (user) {
+      user.name = createTenantByProvidersDto.name;
+      user.image = createTenantByProvidersDto.image;
+
+      await user.save();
+      return user;
+    }
+
+    await this.tenantRepository.create(createTenantByProvidersDto);
   }
 
   async getByTenantName(tenantName: string) {

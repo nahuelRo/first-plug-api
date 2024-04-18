@@ -15,7 +15,7 @@ export class Tenant extends Document {
   @Prop({ type: String })
   image?: string;
 
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, required: false })
   password: string;
 
   @Prop({ type: String, required: false })

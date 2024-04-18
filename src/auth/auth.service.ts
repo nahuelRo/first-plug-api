@@ -5,6 +5,7 @@ import { genSalt, hash } from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { ObjectId } from 'mongoose';
 import { UserJWT } from './interfaces/auth.interface';
+import { CreateTenantByProvidersDto } from 'src/tenants/dto/create-tenant-by-providers.dto';
 
 const EXPIRE_TIME = 20 * 1000;
 
@@ -62,6 +63,38 @@ export class AuthService {
     }
 
     throw new UnauthorizedException();
+  }
+
+  async getTokens(createTenantByProvidersDto: CreateTenantByProvidersDto) {
+    const user = await this.tenantService.findByEmail(
+      createTenantByProvidersDto.email,
+    );
+
+    const { _id, email, name, image, tenantName } = user;
+
+    const payload: UserJWT = {
+      _id,
+      email,
+      name,
+      image,
+      tenantName,
+    };
+
+    return {
+      user,
+      backendTokens: {
+        accessToken: await this.jwtService.signAsync(payload, {
+          expiresIn: '1h',
+          secret: process.env.JWTSECRETKEY,
+        }),
+
+        refreshToken: await this.jwtService.signAsync(payload, {
+          expiresIn: '7h',
+          secret: process.env.JWTREFRESHTOKENKEY,
+        }),
+        expireIn: new Date().setTime(new Date().getTime()) * EXPIRE_TIME,
+      },
+    };
   }
 
   async refreshToken(user: any) {
