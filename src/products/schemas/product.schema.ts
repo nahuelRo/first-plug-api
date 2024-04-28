@@ -8,47 +8,31 @@ export class Product extends Document {
   name: string;
 
   @Prop({ type: String, required: true })
-  description: string;
-
-  @Prop({ type: String, required: true })
   category: string;
 
-  @Prop({ type: String, default: '' })
-  color?: string;
+  @Prop({ type: [{ key: String, value: String }] })
+  properties: string;
 
-  @Prop({ type: String, default: '' })
-  screen?: string;
-
-  @Prop({ type: String, default: '' })
-  keyboard?: string;
-
-  @Prop({ type: String, default: '' })
-  processor?: string;
-
-  @Prop({ type: String, default: '' })
-  ram?: string;
-
-  @Prop({ type: String, default: '' })
-  storage?: string;
-
-  @Prop({ type: String, default: '' })
-  gpu?: string;
-
-  @Prop({ type: String, default: '' })
+  @Prop({ type: String })
   serialNumber?: string;
+
+  @Prop({ type: Boolean, required: true })
+  recoverable: boolean;
+
+  @Prop({ type: String })
+  assignedEmail?: string;
+
+  @Prop({ type: String })
+  acquisitionDate?: string;
+
+  @Prop({ type: String })
+  location?: string;
 
   @Prop({
     required: true,
     enum: PRODUCT_STATUSES,
-    default: 'Available',
   })
   status: string;
-
-  @Prop({ type: String, default: '' })
-  imgUrl?: string;
-
-  @Prop({ type: Number, required: true, default: 1 })
-  stock: number;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
