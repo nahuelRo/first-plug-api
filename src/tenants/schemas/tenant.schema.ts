@@ -36,6 +36,8 @@ TenantSchema.pre('save', async function (next) {
     this.password = await hash(this.password, salt);
     next();
   } catch (error) {
-    return next(error);
+    if (typeof error === 'object' && error instanceof Error) {
+      next(error);
+    }
   }
 });
