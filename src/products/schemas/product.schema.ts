@@ -1,54 +1,48 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { PRODUCT_STATUSES } from '../interfaces/product.interface';
+import {
+  CATEGORIES,
+  Category,
+  Key,
+  STATES,
+  Status,
+} from '../interfaces/product.interface';
+import * as mongooseTimestamp from 'mongoose-timestamp';
+import * as mongooseDelete from 'mongoose-delete';
 
 @Schema()
 export class Product extends Document {
   @Prop({ type: String, required: true })
   name: string;
 
-  @Prop({ type: String, required: true })
-  description: string;
+  @Prop({ enum: CATEGORIES, required: true })
+  category: Category;
 
-  @Prop({ type: String, required: true })
-  category: string;
+  @Prop({ type: [{ key: String, value: String }] })
+  attributes: Array<{ key: Key; value: string }>;
 
-  @Prop({ type: String, default: '' })
-  color?: string;
-
-  @Prop({ type: String, default: '' })
-  screen?: string;
-
-  @Prop({ type: String, default: '' })
-  keyboard?: string;
-
-  @Prop({ type: String, default: '' })
-  processor?: string;
-
-  @Prop({ type: String, default: '' })
-  ram?: string;
-
-  @Prop({ type: String, default: '' })
-  storage?: string;
-
-  @Prop({ type: String, default: '' })
-  gpu?: string;
-
-  @Prop({ type: String, default: '' })
+  @Prop({ type: String })
   serialNumber?: string;
+
+  @Prop({ type: Boolean, required: true })
+  recoverable: boolean;
+
+  @Prop({ type: String })
+  assignedEmail?: string;
+
+  @Prop({ type: String })
+  acquisitionDate?: string;
+
+  @Prop({ type: String })
+  location?: string;
 
   @Prop({
     required: true,
-    enum: PRODUCT_STATUSES,
-    default: 'Available',
+    enum: STATES,
   })
-  status: string;
-
-  @Prop({ type: String, default: '' })
-  imgUrl?: string;
-
-  @Prop({ type: Number, required: true, default: 1 })
-  stock: number;
+  status: Status;
 }
 
-export const ProductSchema = SchemaFactory.createForClass(Product);
+export const ProductSchema = SchemaFactory.createForClass(Product)
+  .plugin(mongooseTimestamp)
+  .plugin(mongooseDelete, { overrideMethods: true });

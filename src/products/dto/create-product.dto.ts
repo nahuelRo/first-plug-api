@@ -8,7 +8,7 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
-import { PRODUCT_STATUSES } from '../interfaces/product.interface';
+import { STATES } from '../interfaces/product.interface';
 
 export class CreateProductDto {
   @IsString()
@@ -47,8 +47,8 @@ export class CreateProductDto {
   @IsString()
   serialNumber?: string;
 
-  @IsEnum(PRODUCT_STATUSES, {
-    message: `status must be one of the following values: ${PRODUCT_STATUSES.join(', ')}`,
+  @IsEnum(STATES, {
+    message: `status must be one of the following values: ${STATES.join(', ')}`,
   })
   status: string;
 
