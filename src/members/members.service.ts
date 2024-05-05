@@ -61,7 +61,9 @@ export class MembersService {
 
       await this.productsService.deleteMany(productsIds, session);
 
-      member.products.push(...productsToDelete);
+      if (member.products) {
+        member.products.push(...productsToDelete);
+      }
 
       await member.save({ session });
 

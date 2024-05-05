@@ -89,7 +89,6 @@ export class ShipmentsService {
 
   async update(id: ObjectId, updateShipmentDto: UpdateShipmentDto) {
     const { member, ...rest } = updateShipmentDto;
-    let updatedOrder: Model<Member>;
 
     if (member) {
       const [firstName, lastName] = member.split(' ');
@@ -102,20 +101,22 @@ export class ShipmentsService {
         throw new NotFoundException(`The member ${member} does not exist.`);
       }
 
-      updatedOrder = await this.shipmentRepository.findByIdAndUpdate(
+      const updatedOrder = await this.shipmentRepository.findByIdAndUpdate(
         id,
         { member: memberDocument, ...rest },
         { new: true },
       );
+
+      return updatedOrder;
     } else {
-      updatedOrder = await this.shipmentRepository.findByIdAndUpdate(
+      const updatedOrder = await this.shipmentRepository.findByIdAndUpdate(
         id,
         { ...rest },
         { new: true },
       );
-    }
 
-    return updatedOrder;
+      return updatedOrder;
+    }
   }
 
   async remove(id: ObjectId) {
