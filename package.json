@@ -20,6 +20,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@anatine/zod-nestjs": "^2.0.8",
+    "@anatine/zod-openapi": "^2.2.5",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.2.2",
     "@nestjs/core": "^10.0.0",
@@ -34,8 +36,10 @@
     "mongoose": "^8.3.0",
     "mongoose-delete": "^1.0.2",
     "mongoose-timestamp": "^0.6.0",
+    "openapi3-ts": "^4.3.1",
     "reflect-metadata": "^0.2.0",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "zod": "^3.23.5"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
