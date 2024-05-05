@@ -70,31 +70,33 @@ export class AuthService {
       createTenantByProvidersDto.email,
     );
 
-    const { _id, email, name, image, tenantName } = user;
+    if (user) {
+      const { _id, email, name, image, tenantName } = user;
 
-    const payload: UserJWT = {
-      _id,
-      email,
-      name,
-      image,
-      tenantName,
-    };
+      const payload: UserJWT = {
+        _id,
+        email,
+        name,
+        image,
+        tenantName,
+      };
 
-    return {
-      user,
-      backendTokens: {
-        accessToken: await this.jwtService.signAsync(payload, {
-          expiresIn: '1h',
-          secret: process.env.JWTSECRETKEY,
-        }),
+      return {
+        user,
+        backendTokens: {
+          accessToken: await this.jwtService.signAsync(payload, {
+            expiresIn: '1h',
+            secret: process.env.JWTSECRETKEY,
+          }),
 
-        refreshToken: await this.jwtService.signAsync(payload, {
-          expiresIn: '7h',
-          secret: process.env.JWTREFRESHTOKENKEY,
-        }),
-        expireIn: new Date().setTime(new Date().getTime()) * EXPIRE_TIME,
-      },
-    };
+          refreshToken: await this.jwtService.signAsync(payload, {
+            expiresIn: '7h',
+            secret: process.env.JWTREFRESHTOKENKEY,
+          }),
+          expireIn: new Date().setTime(new Date().getTime()) * EXPIRE_TIME,
+        },
+      };
+    }
   }
 
   async refreshToken(user: any) {
