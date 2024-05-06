@@ -136,7 +136,7 @@ export function validateAttributeValues(
         }
         break;
       case 'model':
-        if (attr.key === 'model' && category) {
+        if (attr.key === 'model' && category && category !== 'Other') {
           let allowedModels: string[] = [];
 
           if (category === 'Computer') {

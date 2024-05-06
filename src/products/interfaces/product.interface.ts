@@ -55,7 +55,7 @@ export const CATEGORY_KEYS: Record<Category, readonly Key[]> = {
   Monitor: ['brand', 'model', 'screen', 'color'],
   Audio: ['brand', 'model', 'color'],
   Peripherals: ['brand', 'model', 'color'],
-  Other: ['brand'],
+  Other: ['brand', 'color', 'model'],
 };
 
 export type ValidationError = {
