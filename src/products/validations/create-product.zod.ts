@@ -56,7 +56,7 @@ export const ProductSchemaZod = z
         (key) => !presentKeys.includes(key),
       );
       return {
-        message: `attributes: are missing required keys for the selected category. (${missingKeys.join(',')})`,
+        message: `are missing required keys for the selected category. (${missingKeys.join(',')})`,
         path: ['attributes'],
       };
     },
