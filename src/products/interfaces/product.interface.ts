@@ -1,5 +1,3 @@
-export const STATES = ['Available', 'Delivered'] as const;
-
 export const CATEGORIES = [
   'Merchandising',
   'Computer',
@@ -11,9 +9,11 @@ export const CATEGORIES = [
 
 export type Category = (typeof CATEGORIES)[number];
 
+export const STATES = ['Available', 'Delivered'] as const;
+
 export type Status = (typeof STATES)[number];
 
-export const KEYS = [
+export const ATTRIBUTES = [
   'brand',
   'model',
   'color',
@@ -25,4 +25,9 @@ export const KEYS = [
   'gpu',
 ] as const;
 
-export type Key = (typeof KEYS)[number];
+export type AttributeKey = (typeof ATTRIBUTES)[number];
+
+export type Attribute = {
+  key: AttributeKey;
+  value: unknown;
+};
