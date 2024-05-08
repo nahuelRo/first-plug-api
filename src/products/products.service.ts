@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ClientSession, Model, ObjectId } from 'mongoose';
 import { Product } from './schemas/product.schema';
 import { CreateProductDto, UpdateProductDto } from './dto';
@@ -77,12 +72,14 @@ export class ProductsService {
 
   async softDelete(id: ObjectId) {
     const product: any = await this.findById(id);
-    if (!product) {
-      throw new BadRequestException(`Product with id "${id}" not found`);
-    }
+
     await product.delete();
     product.status = 'Deprecated';
-    return await product.save();
+    await product.save();
+
+    return {
+      message: `Product with id "${id}" has been soft deleted`,
+    };
   }
 
   async deleteMany(productIdsToDelete: ObjectId[], session?: ClientSession) {
