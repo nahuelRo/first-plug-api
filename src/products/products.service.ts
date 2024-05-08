@@ -75,6 +75,19 @@ export class ProductsService {
     );
   }
 
+  async softDelete(id: ObjectId) {
+    //si no trato a product como any, no me deja usar el metodo delete
+    const product: any = await this.productRepository.findById(id);
+    if (!product) {
+      throw new BadRequestException(`Product with id "${id}" not found`);
+    }
+    product.deleted = true;
+    product.status = 'Deprecated';
+    product.deletedAt = new Date();
+    await product.save();
+    return product;
+  }
+
   async remove(id: ObjectId) {
     const { deletedCount } = await this.productRepository.deleteOne({
       _id: id,

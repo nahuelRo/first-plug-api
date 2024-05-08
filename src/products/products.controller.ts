@@ -63,6 +63,6 @@ export class ProductsController {
 
   @Delete(':id')
   remove(@Param('id', ParseMongoIdPipe) id: ObjectId) {
-    return this.productsService.remove(id);
+    return this.productsService.softDelete(id);
   }
 }
