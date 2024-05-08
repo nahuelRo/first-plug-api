@@ -45,4 +45,4 @@ export class Product extends Document {
 
 export const ProductSchema = SchemaFactory.createForClass(Product)
   .plugin(mongooseTimestamp)
-  .plugin(mongooseDelete, { overrideMethods: true });
+  .plugin(mongooseDelete, { overrideMethods: true, deletedAt: true });
