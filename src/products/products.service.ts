@@ -80,9 +80,9 @@ export class ProductsService {
     if (!product) {
       throw new BadRequestException(`Product with id "${id}" not found`);
     }
+    await product.delete();
     product.status = 'Deprecated';
-    await product.save();
-    return product;
+    return await product.save();
   }
 
   async deleteMany(productIdsToDelete: ObjectId[], session?: ClientSession) {
