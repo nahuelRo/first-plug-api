@@ -1,16 +1,20 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
 import {
+  Prop,
+  Schema as DecoratorSchema,
+  SchemaFactory,
+} from '@nestjs/mongoose';
+import { Document, Schema } from 'mongoose';
+import {
+  Attribute,
   CATEGORIES,
   Category,
-  Key,
   STATES,
   Status,
 } from '../interfaces/product.interface';
 import * as mongooseTimestamp from 'mongoose-timestamp';
 import * as mongooseDelete from 'mongoose-delete';
 
-@Schema()
+@DecoratorSchema()
 export class Product extends Document {
   @Prop({ type: String, required: true })
   name: string;
@@ -18,14 +22,20 @@ export class Product extends Document {
   @Prop({ enum: CATEGORIES, required: true })
   category: Category;
 
-  @Prop({ type: [{ key: String, value: String }] })
-  attributes: Array<{ key: Key; value: string }>;
+  @Prop({ type: [{ key: String, value: Schema.Types.Mixed }], required: true })
+  attributes: Attribute[];
 
-  @Prop({ type: String })
-  serialNumber?: string;
+  @Prop({
+    enum: STATES,
+    required: true,
+  })
+  status: Status;
 
   @Prop({ type: Boolean, required: true })
   recoverable: boolean;
+
+  @Prop({ type: String })
+  serialNumber?: string;
 
   @Prop({ type: String })
   assignedEmail?: string;
@@ -35,12 +45,6 @@ export class Product extends Document {
 
   @Prop({ type: String })
   location?: string;
-
-  @Prop({
-    required: true,
-    enum: STATES,
-  })
-  status: Status;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product)
