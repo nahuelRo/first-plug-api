@@ -1,54 +1,52 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
-import { PRODUCT_STATUSES } from '../interfaces/product.interface';
+import {
+  Prop,
+  Schema as DecoratorSchema,
+  SchemaFactory,
+} from '@nestjs/mongoose';
+import { Document, Schema } from 'mongoose';
+import {
+  Attribute,
+  CATEGORIES,
+  Category,
+  STATES,
+  Status,
+} from '../interfaces/product.interface';
+import * as mongooseTimestamp from 'mongoose-timestamp';
+import * as mongooseDelete from 'mongoose-delete';
 
-@Schema()
+@DecoratorSchema()
 export class Product extends Document {
   @Prop({ type: String, required: true })
   name: string;
 
-  @Prop({ type: String, required: true })
-  description: string;
+  @Prop({ enum: CATEGORIES, required: true })
+  category: Category;
 
-  @Prop({ type: String, required: true })
-  category: string;
-
-  @Prop({ type: String, default: '' })
-  color?: string;
-
-  @Prop({ type: String, default: '' })
-  screen?: string;
-
-  @Prop({ type: String, default: '' })
-  keyboard?: string;
-
-  @Prop({ type: String, default: '' })
-  processor?: string;
-
-  @Prop({ type: String, default: '' })
-  ram?: string;
-
-  @Prop({ type: String, default: '' })
-  storage?: string;
-
-  @Prop({ type: String, default: '' })
-  gpu?: string;
-
-  @Prop({ type: String, default: '' })
-  serialNumber?: string;
+  @Prop({ type: [{ key: String, value: Schema.Types.Mixed }], required: true })
+  attributes: Attribute[];
 
   @Prop({
+    enum: STATES,
     required: true,
-    enum: PRODUCT_STATUSES,
-    default: 'Available',
   })
-  status: string;
+  status: Status;
 
-  @Prop({ type: String, default: '' })
-  imgUrl?: string;
+  @Prop({ type: Boolean, required: true })
+  recoverable: boolean;
 
-  @Prop({ type: Number, required: true, default: 1 })
-  stock: number;
+  @Prop({ type: String })
+  serialNumber?: string;
+
+  @Prop({ type: String })
+  assignedEmail?: string;
+
+  @Prop({ type: String })
+  acquisitionDate?: string;
+
+  @Prop({ type: String })
+  location?: string;
 }
 
-export const ProductSchema = SchemaFactory.createForClass(Product);
+export const ProductSchema = SchemaFactory.createForClass(Product)
+  .plugin(mongooseTimestamp)
+  .plugin(mongooseDelete, { overrideMethods: true });
