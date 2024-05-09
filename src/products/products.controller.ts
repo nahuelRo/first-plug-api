@@ -47,6 +47,10 @@ export class ProductsController {
   findAll() {
     return this.productsService.findAll();
   }
+  @Get('/table')
+  getProductsTable() {
+    return this.productsService.tableGrouping();
+  }
 
   @Get(':id')
   findById(@Param('id', ParseMongoIdPipe) id: ObjectId) {

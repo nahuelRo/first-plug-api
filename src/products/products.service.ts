@@ -96,4 +96,25 @@ export class ProductsService {
 
     return query.exec();
   }
+
+  async tableGrouping() {
+    return await this.productRepository.aggregate([
+      {
+        $group: {
+          _id: {
+            category: '$category',
+            attributes: '$attributes.value',
+          },
+          products: { $push: '$$ROOT' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          category: '$_id.category',
+          products: 1,
+        },
+      },
+    ]);
+  }
 }
