@@ -88,3 +88,5 @@ export const ProductSchemaZod = z
       };
     },
   );
+
+export const ProductSchemaZodArray = z.array(ProductSchemaZod);

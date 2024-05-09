@@ -5,7 +5,6 @@ import {
   Get,
   HttpStatus,
   Param,
-  ParseArrayPipe,
   Patch,
   Post,
   Res,
@@ -18,6 +17,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { Response } from 'express';
 import { ObjectId } from 'mongoose';
 import { JwtGuard } from 'src/auth/guard/jwt.guard';
+import { CreateProductArrayDto } from './dto/create-product-array.dto';
 
 @Controller('products')
 @UseGuards(JwtGuard)
@@ -31,8 +31,7 @@ export class ProductsController {
 
   @Post('/bulkcreate')
   async bulkcreate(
-    @Body(new ParseArrayPipe({ items: CreateProductDto }))
-    createProductDto: CreateProductDto[],
+    @Body() createProductDto: CreateProductArrayDto,
     @Res() res: Response,
   ) {
     const createdCount =
