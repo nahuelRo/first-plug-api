@@ -7,7 +7,7 @@ import {
 import {
   CATEGORIES,
   CATEGORY_KEYS,
-  KEYS,
+  ATTRIBUTES,
   STATES,
 } from '../interfaces/product.interface';
 
@@ -19,7 +19,7 @@ export const ProductSchemaZod = z
     attributes: z
       .array(
         z.object({
-          key: z.enum(KEYS),
+          key: z.enum(ATTRIBUTES),
           value: z.string(),
         }),
       )
