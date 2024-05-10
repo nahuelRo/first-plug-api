@@ -56,21 +56,21 @@ export const PROCESSORS = [
 ] as const;
 
 export const RAMS = [
-  '4',
-  '6',
-  '8',
-  '12',
-  '16',
-  '20',
-  '24',
-  '32',
-  '36',
-  '40',
-  '46',
-  '48',
-  '64',
-  '96',
-  '128',
+  '4GB',
+  '6GB',
+  '8GB',
+  '12GB',
+  '16GB',
+  '20GB',
+  '24GB',
+  '32GB',
+  '36GB',
+  '40GB',
+  '46GB',
+  '48GB',
+  '64GB',
+  '96GB',
+  '128GB',
 ] as const;
 
 export const GPUS = [
