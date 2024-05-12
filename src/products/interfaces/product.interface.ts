@@ -16,6 +16,10 @@ import {
   STORAGE,
 } from './attributes.interface';
 
+export const LOCATIONS = ['Employee', 'FP Warehouse', 'Our office'] as const;
+
+export type Location = (typeof LOCATIONS)[number];
+
 export const CATEGORIES = [
   'Merchandising',
   'Computer',

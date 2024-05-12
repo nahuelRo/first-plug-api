@@ -1,9 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { genSalt, hash } from 'bcrypt';
 import { Document } from 'mongoose';
+import * as mongooseTimestamp from 'mongoose-timestamp';
 @Schema()
 export class Tenant extends Document {
-  @Prop({ type: String })
+  @Prop({ type: String, default: '' })
   tenantName: string;
 
   @Prop({ type: String, required: true })
@@ -22,7 +23,8 @@ export class Tenant extends Document {
   salt: string;
 }
 
-export const TenantSchema = SchemaFactory.createForClass(Tenant);
+export const TenantSchema =
+  SchemaFactory.createForClass(Tenant).plugin(mongooseTimestamp);
 
 TenantSchema.pre('save', async function (next) {
   if (!this.isModified('password') || !this.password) {
