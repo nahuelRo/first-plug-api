@@ -9,6 +9,7 @@ import {
   CATEGORY_KEYS,
   ATTRIBUTES,
   STATES,
+  LOCATIONS,
 } from '../interfaces/product.interface';
 
 // TODO: refine works but we have to find a better way to handle the cause of the error and the error message so as not to repeat the same function twice
@@ -36,7 +37,7 @@ export const ProductSchemaZod = z
     recoverable: z.boolean(),
     assignedEmail: z.string().optional(),
     acquisitionDate: z.string().optional(),
-    location: z.string().optional(),
+    location: z.enum(LOCATIONS),
     status: z.enum(STATES),
   })
   .refine(
