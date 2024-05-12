@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Member } from '../../members/schemas/member.schema';
 import { ORDER_STATUSES, OrderStatus } from '../interfaces/order.interface';
 import { Document } from 'mongoose';
+import * as mongooseTimestamp from 'mongoose-timestamp';
 
 @Schema()
 export class Order extends Document {
@@ -22,4 +23,5 @@ export class Order extends Document {
   total: string;
 }
 
-export const OrderSchema = SchemaFactory.createForClass(Order);
+export const OrderSchema =
+  SchemaFactory.createForClass(Order).plugin(mongooseTimestamp);

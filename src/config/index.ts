@@ -1,2 +1,2 @@
 export { EnvConfiguration } from './env.config';
-export { JoiValidationSchema } from './joi.validation';
+export { ZodEnvironmentsSchema } from './environments.validation';
