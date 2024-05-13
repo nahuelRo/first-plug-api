@@ -16,7 +16,7 @@ import {
   STORAGE,
 } from './attributes.interface';
 
-export const LOCATIONS = ['Employee', 'FP Warehouse', 'Our office'] as const;
+export const LOCATIONS = ['Employee', 'FP warehouse', 'Our office'] as const;
 
 export type Location = (typeof LOCATIONS)[number];
 
@@ -40,7 +40,7 @@ export const ATTRIBUTES = [
   'model',
   'color',
   'screen',
-  'keyboardLenguage',
+  'keyboardLanguage',
   'processor',
   'ram',
   'storage',
@@ -61,7 +61,7 @@ export const CATEGORY_KEYS: Record<Category, readonly AttributeKey[]> = {
     'model',
     'color',
     'screen',
-    'keyboardLenguage',
+    'keyboardLanguage',
     'processor',
     'ram',
     'storage',
@@ -69,7 +69,7 @@ export const CATEGORY_KEYS: Record<Category, readonly AttributeKey[]> = {
   ],
   Monitor: ['brand', 'model', 'screen', 'color'],
   Audio: ['brand', 'model', 'color'],
-  Peripherals: ['brand', 'model', 'color'],
+  Peripherals: ['brand', 'model', 'color', 'keyboardLanguage'],
   Other: ['brand', 'color', 'model'],
 };
 

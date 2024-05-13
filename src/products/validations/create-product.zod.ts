@@ -21,7 +21,7 @@ export const ProductSchemaZod = z
       .array(
         z.object({
           key: z.enum(ATTRIBUTES),
-          value: z.string(),
+          value: z.string().optional().default(''),
         }),
       )
       .refine(

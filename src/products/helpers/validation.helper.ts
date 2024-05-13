@@ -104,7 +104,7 @@ export function validateAttributeValues(
           });
         }
         break;
-      case 'keyboardLenguage':
+      case 'keyboardLanguage':
         const keyboardsLenguagesArray = [...KEYBOARDLENGUAGES] as string[];
         if (!keyboardsLenguagesArray.includes(attr.value)) {
           errors.push({

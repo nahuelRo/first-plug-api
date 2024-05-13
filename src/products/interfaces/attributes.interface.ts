@@ -14,6 +14,7 @@ export const COLORS = [
   'Rojo',
   'Verde',
   'Other',
+  '',
 ] as const;
 
 export const SCREENS = [
@@ -32,6 +33,7 @@ export const SCREENS = [
   '34',
   '40',
   '49',
+  '',
 ] as const;
 
 export const PROCESSORS = [
@@ -53,6 +55,7 @@ export const PROCESSORS = [
   'M3 Max',
   'M3 Pro',
   'Other',
+  '',
 ] as const;
 
 export const RAMS = [
@@ -71,6 +74,7 @@ export const RAMS = [
   '64GB',
   '96GB',
   '128GB',
+  '',
 ] as const;
 
 export const GPUS = [
@@ -103,6 +107,7 @@ export const GPUS = [
   'T550',
   'Quadro T500',
   'Other',
+  '',
 ] as const;
 
 export const STORAGE = [
@@ -116,9 +121,10 @@ export const STORAGE = [
   '6TB',
   '7TB',
   '8TB',
+  '',
 ] as const;
 
-export const KEYBOARDLENGUAGES = ['English', 'Spanish', 'Other'] as const;
+export const KEYBOARDLENGUAGES = ['English', 'Spanish', 'Other', ''] as const;
 
 // Attributes by brand
 
@@ -131,6 +137,7 @@ export const COMPUTER_BRANDS = [
   'Lenovo',
   'MSI',
   'Other',
+  '',
 ] as const;
 
 export const PERIPHERALS_BRANDS = [
@@ -139,11 +146,12 @@ export const PERIPHERALS_BRANDS = [
   'Sony',
   'Logitech',
   'Other',
+  '',
 ] as const;
 
-export const AUDIO_BRANDS = ['Apple', 'Sony', 'Logitech', 'Other'] as const;
+export const AUDIO_BRANDS = ['Apple', 'Sony', 'Logitech', 'Other', ''] as const;
 
-export const MONITOR_BRANDS = ['Samsung', 'LG', 'Other'] as const;
+export const MONITOR_BRANDS = ['Samsung', 'LG', 'Other', ''] as const;
 
 // Attributes by model
 
@@ -218,6 +226,7 @@ export const COMPUTER_MODELS = [
   'Yoga Serie Slim',
   'Zenbook',
   'Other',
+  '',
 ] as const;
 
 export const AUDIO_MODELS = [
@@ -248,6 +257,7 @@ export const AUDIO_MODELS = [
   'Zone Vibe 100',
   'Zone Vibe 125',
   'Other',
+  '',
 ] as const;
 
 export const MONITOR_MODELS = [
@@ -262,6 +272,7 @@ export const MONITOR_MODELS = [
   'UltraGear Monitor',
   'UltraWide Monitor',
   'Other',
+  '',
 ] as const;
 
 export const PERIPHERALS_MODELS = [
@@ -329,4 +340,5 @@ export const PERIPHERALS_MODELS = [
   'SM1 Slim Teclado Mecanico Bluetooth',
   'Waterproof Laptop Case',
   'Other',
+  '',
 ] as const;
