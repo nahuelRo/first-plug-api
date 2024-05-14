@@ -104,6 +104,7 @@ export class ProductsService {
           _id: {
             category: '$category',
             attributes: '$attributes.value',
+            name: '$name',
           },
           products: { $push: '$$ROOT' },
         },
@@ -112,6 +113,7 @@ export class ProductsService {
         $project: {
           _id: 0,
           category: '$_id.category',
+          name: '$_id.name',
           products: 1,
         },
       },
