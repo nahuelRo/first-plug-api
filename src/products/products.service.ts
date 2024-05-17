@@ -104,7 +104,7 @@ export class ProductsService {
           _id: {
             category: '$category',
             attributes: '$attributes.value',
-            name: '$name',
+            name: { $toLower: '$name' },
           },
           products: { $push: '$$ROOT' },
         },
