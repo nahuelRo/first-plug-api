@@ -4,7 +4,6 @@ import { TenantsService } from 'src/tenants/tenants.service';
 import { genSalt, hash } from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { ObjectId } from 'mongoose';
-import { UserJWT } from './interfaces/auth.interface';
 import { CreateTenantByProvidersDto } from 'src/tenants/dto/create-tenant-by-providers.dto';
 
 const EXPIRE_TIME = 20 * 1000;
@@ -21,7 +20,7 @@ export class AuthService {
 
     const { _id, email, name, image, tenantName } = user;
 
-    const payload: UserJWT = {
+    const payload = {
       _id,
       email,
       name,
@@ -73,7 +72,7 @@ export class AuthService {
     if (user) {
       const { _id, email, name, image, tenantName } = user;
 
-      const payload: UserJWT = {
+      const payload = {
         _id,
         email,
         name,

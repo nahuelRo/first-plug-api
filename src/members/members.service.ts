@@ -38,44 +38,44 @@ export class MembersService {
     return member;
   }
 
-  async assignManyProductsToMember(
-    memberId: ObjectId,
-    productsIds: ObjectId[],
-  ) {
-    const session = await this.memberRepository.db.startSession();
-    session.startTransaction();
+  // async assignManyProductsToMember(
+  //   memberId: ObjectId,
+  //   productsIds: ObjectId[],
+  // ) {
+  //   const session = await this.memberRepository.db.startSession();
+  //   session.startTransaction();
 
-    try {
-      const member = await this.memberRepository
-        .findById(memberId)
-        .session(session);
+  //   try {
+  //     const member = await this.memberRepository
+  //       .findById(memberId)
+  //       .session(session);
 
-      if (!member) {
-        throw new Error('Member not found');
-      }
+  //     if (!member) {
+  //       throw new Error('Member not found');
+  //     }
 
-      const productsToDelete = await this.productsService.getAllByIds(
-        productsIds,
-        session,
-      );
+  //     const productsToDelete = await this.productsService.getAllByIds(
+  //       productsIds,
+  //       session,
+  //     );
 
-      await this.productsService.deleteMany(productsIds, session);
+  //     await this.productsService.deleteMany(productsIds, session);
 
-      if (member.products) {
-        member.products.push(...productsToDelete);
-      }
+  //     if (member.products) {
+  //       member.products.push(...productsToDelete);
+  //     }
 
-      await member.save({ session });
+  //     await member.save({ session });
 
-      await session.commitTransaction();
-    } catch (error) {
-      await session.abortTransaction();
-      console.log(error);
-      throw error;
-    } finally {
-      session.endSession();
-    }
-  }
+  //     await session.commitTransaction();
+  //   } catch (error) {
+  //     await session.abortTransaction();
+  //     console.log(error);
+  //     throw error;
+  //   } finally {
+  //     session.endSession();
+  //   }
+  // }
 
   async update(id: ObjectId, updateMemberDto: UpdateMemberDto) {
     return await this.memberRepository.findByIdAndUpdate(id, updateMemberDto, {

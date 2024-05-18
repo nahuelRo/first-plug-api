@@ -16,7 +16,6 @@ import { CreateMemberDto, UpdateMemberDto } from './dto';
 import { Response } from 'express';
 import { ObjectId } from 'mongoose';
 import { ParseMongoIdPipe } from '../common/pipes/parse-mongo-id.pipe';
-import { AssignManyProductsDto } from './dto/assign-many-products.dto';
 import { JwtGuard } from 'src/auth/guard/jwt.guard';
 
 @Controller('members')
@@ -42,13 +41,13 @@ export class MembersController {
     });
   }
 
-  @Post('/assign-many-products')
-  async assignManyProducts(
-    @Body() assignManyProductsDto: AssignManyProductsDto,
-  ) {
-    const { memberId, productsIds } = assignManyProductsDto;
-    await this.membersService.assignManyProductsToMember(memberId, productsIds);
-  }
+  // @Post('/assign-many-products')
+  // async assignManyProducts(
+  //   @Body() assignManyProductsDto: AssignManyProductsDto,
+  // ) {
+  //   const { memberId, productsIds } = assignManyProductsDto;
+  //   await this.membersService.assignManyProductsToMember(memberId, productsIds);
+  // }
 
   @Get()
   findAll() {

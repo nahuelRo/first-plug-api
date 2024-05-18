@@ -35,35 +35,35 @@ export class ProductsService {
     return product;
   }
 
-  async getAllByIds(productIds: ObjectId[], session?: ClientSession) {
-    const uniqueProductIds = [...new Set(productIds)];
+  // async getAllByIds(productIds: ObjectId[], session?: ClientSession) {
+  //   const uniqueProductIds = [...new Set(productIds)];
 
-    let query = this.productRepository.find({ _id: { $in: uniqueProductIds } });
+  //   let query = this.productRepository.find({ _id: { $in: uniqueProductIds } });
 
-    if (session) {
-      query = query.session(session);
-    }
+  //   if (session) {
+  //     query = query.session(session);
+  //   }
 
-    const products = await query.exec();
+  //   const products = await query.exec();
 
-    if (!products || products.length === 0) {
-      throw new NotFoundException(`No products found for the provided IDs`);
-    }
+  //   if (!products || products.length === 0) {
+  //     throw new NotFoundException(`No products found for the provided IDs`);
+  //   }
 
-    if (products.length !== uniqueProductIds.length) {
-      const foundProductIds = products.map((product) => product._id);
+  //   if (products.length !== uniqueProductIds.length) {
+  //     const foundProductIds = products.map((product) => product._id);
 
-      const notFoundProductIds = productIds.filter((productId) => {
-        return !foundProductIds.some((foundId) => foundId.equals(productId));
-      });
+  //     const notFoundProductIds = productIds.filter((productId) => {
+  //       return !foundProductIds.some((foundId) => foundId.equals(productId));
+  //     });
 
-      throw new NotFoundException(
-        `Products with IDs ${notFoundProductIds.join(', ')} not found`,
-      );
-    }
+  //     throw new NotFoundException(
+  //       `Products with IDs ${notFoundProductIds.join(', ')} not found`,
+  //     );
+  //   }
 
-    return products;
-  }
+  //   return products;
+  // }
 
   async update(id: ObjectId, updateProductDto: UpdateProductDto) {
     return await this.productRepository.findByIdAndUpdate(
