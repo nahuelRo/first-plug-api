@@ -96,6 +96,38 @@ export const ProductSchemaZod = z
         path: [`${errorMessages[0].path}`],
       };
     },
+  )
+  .refine(
+    (data) => {
+      if (data.status === 'Available') {
+        return ['FP warehouse', 'Our office'].includes(data.location);
+      }
+      if (data.status === 'Delivered') {
+        return data.location === 'Employee';
+      }
+
+      return true;
+    },
+    (val) => {
+      if (val.status === 'Available') {
+        return {
+          message:
+            'must be FP warehouse, or Our office when status is Available.',
+          path: ['location'],
+        };
+      }
+      if (val.status === 'Delivered') {
+        return {
+          message: 'must be Employee when status is Delivered.',
+          path: ['location'],
+        };
+      }
+
+      return {
+        message: 'Invalid location for the given status.',
+        path: ['location'],
+      };
+    },
   );
 
 export const ProductSchemaZodArray = z.array(ProductSchemaZod);
