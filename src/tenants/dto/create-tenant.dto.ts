@@ -1,4 +1,10 @@
-import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsLowercase,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export class CreateTenantDto {
   @IsString()
@@ -11,6 +17,7 @@ export class CreateTenantDto {
 
   @IsEmail()
   @MinLength(1)
+  @IsLowercase()
   email: string;
 
   @IsString()
