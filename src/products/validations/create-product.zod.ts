@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import {
   validateAttributeValues,
   validateCategoryKeys,
@@ -12,7 +13,6 @@ import {
   LOCATIONS,
 } from '../interfaces/product.interface';
 
-// TODO: refine works but we have to find a better way to handle the cause of the error and the error message so as not to repeat the same function twice
 export const ProductSchemaZod = z
   .object({
     name: z.string().min(1),
@@ -34,11 +34,19 @@ export const ProductSchemaZod = z
         },
       ),
     serialNumber: z.string().optional(),
-    recoverable: z.boolean(),
+    recoverable: z.boolean().default(true).optional(),
     assignedEmail: z.string().optional(),
     acquisitionDate: z.string().optional(),
     location: z.enum(LOCATIONS),
     status: z.enum(STATES),
+  })
+  .transform((data) => {
+    if (data.category === 'Merchandising') {
+      data.recoverable = false;
+    } else {
+      data.recoverable = true;
+    }
+    return data;
   })
   .refine(
     (data) => {
