@@ -7,9 +7,8 @@ import {
   ShipmentType,
 } from '../interfaces/shipment.interface';
 import { Member } from 'src/members/schemas/member.schema';
-import * as mongooseTimestamp from 'mongoose-timestamp';
 
-@Schema()
+@Schema({ timestamps: true })
 export class Shipment extends Document {
   @Prop({ type: Member, required: true })
   member: Member;
@@ -41,5 +40,4 @@ export class Shipment extends Document {
   status: ShipmentStatus;
 }
 
-export const ShipmentSchema =
-  SchemaFactory.createForClass(Shipment).plugin(mongooseTimestamp);
+export const ShipmentSchema = SchemaFactory.createForClass(Shipment);

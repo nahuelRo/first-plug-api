@@ -1,9 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import { Product } from '../../products/schemas/product.schema';
-import * as mongooseTimestamp from 'mongoose-timestamp';
 
-@Schema()
+@Schema({ timestamps: true })
 export class Member extends Document {
   @Prop({ type: String, required: true })
   firstName: string;
@@ -48,5 +47,4 @@ export class Member extends Document {
   products?: Product[];
 }
 
-export const MemberSchema =
-  SchemaFactory.createForClass(Member).plugin(mongooseTimestamp);
+export const MemberSchema = SchemaFactory.createForClass(Member);

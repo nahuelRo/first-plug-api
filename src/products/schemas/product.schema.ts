@@ -11,10 +11,9 @@ import {
   STATES,
   Status,
 } from '../interfaces/product.interface';
-import * as mongooseTimestamp from 'mongoose-timestamp';
 import * as mongooseDelete from 'mongoose-delete';
 
-@DecoratorSchema()
+@DecoratorSchema({ timestamps: true })
 export class Product extends Document {
   @Prop({ type: String, required: true })
   name: string;
@@ -47,6 +46,7 @@ export class Product extends Document {
   location?: string;
 }
 
-export const ProductSchema = SchemaFactory.createForClass(Product)
-  .plugin(mongooseTimestamp)
-  .plugin(mongooseDelete, { overrideMethods: true });
+export const ProductSchema = SchemaFactory.createForClass(Product).plugin(
+  mongooseDelete,
+  { overrideMethods: true },
+);
