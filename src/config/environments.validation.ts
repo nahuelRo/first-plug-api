@@ -5,4 +5,5 @@ export const ZodEnvironmentsSchema = z.object({
   PORT: z.string().default('3001'),
   JWTSECRETKEY: z.string().min(1),
   JWTREFRESHTOKENKEY: z.string().min(1),
+  SLACK_WEBHOOK_URL: z.string().min(1),
 });

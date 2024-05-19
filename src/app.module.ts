@@ -9,6 +9,7 @@ import { OrdersModule } from './orders/orders.module';
 import { ShipmentsModule } from './shipments/shipments.module';
 import { AuthModule } from './auth/auth.module';
 import { TeamsModule } from './teams/teams.module';
+import { SlackModule } from 'nestjs-slack-webhook';
 
 @Module({
   imports: [
@@ -22,6 +23,13 @@ import { TeamsModule } from './teams/teams.module';
       imports: [ConfigModule],
       useFactory: async (config) => ({
         uri: config.get('database.connectionString'),
+      }),
+      inject: [ConfigService],
+    }),
+    SlackModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (config) => ({
+        url: config.get('server.slackWebhookUrl'),
       }),
       inject: [ConfigService],
     }),
