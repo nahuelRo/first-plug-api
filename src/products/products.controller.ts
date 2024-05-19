@@ -34,12 +34,9 @@ export class ProductsController {
     @Body() createProductDto: CreateProductArrayDto,
     @Res() res: Response,
   ) {
-    const createdCount =
-      await this.productsService.bulkcreate(createProductDto);
+    const products = await this.productsService.bulkcreate(createProductDto);
 
-    res.status(HttpStatus.CREATED).json({
-      message: `Bulk create successful: ${createdCount} documents inserted successfully out of ${createProductDto.length}.`,
-    });
+    res.status(HttpStatus.CREATED).json(products);
   }
 
   @Get()

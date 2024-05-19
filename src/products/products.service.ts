@@ -19,7 +19,7 @@ export class ProductsService {
   }
 
   async bulkcreate(createProductDto: CreateProductDto[]) {
-    return (await this.productRepository.insertMany(createProductDto)).length;
+    return await this.productRepository.insertMany(createProductDto);
   }
 
   async findAll() {
