@@ -11,7 +11,7 @@ import {
   STATES,
   Status,
 } from '../interfaces/product.interface';
-import * as mongooseDelete from 'mongoose-delete';
+import { softDeletePlugin } from 'soft-delete-plugin-mongoose';
 
 @DecoratorSchema({ timestamps: true })
 export class Product extends Document {
@@ -44,9 +44,9 @@ export class Product extends Document {
 
   @Prop({ type: String })
   location?: string;
+
+  isDeleted: boolean;
 }
 
-export const ProductSchema = SchemaFactory.createForClass(Product).plugin(
-  mongooseDelete,
-  { overrideMethods: true },
-);
+export const ProductSchema =
+  SchemaFactory.createForClass(Product).plugin(softDeletePlugin);
