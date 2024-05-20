@@ -2,11 +2,17 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ClientSession, Model, ObjectId } from 'mongoose';
 import { Product } from './schemas/product.schema';
 import { CreateProductDto, UpdateProductDto } from './dto';
+import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
+
+export interface ProductModel
+  extends Model<Product>,
+    SoftDeleteModel<Product> {}
 
 @Injectable()
 export class ProductsService {
   constructor(
-    @Inject('PRODUCT_MODEL') private productRepository: Model<Product>,
+    @Inject('PRODUCT_MODEL')
+    private readonly productRepository: ProductModel,
   ) {}
 
   async create(createProductDto: CreateProductDto) {
@@ -24,9 +30,9 @@ export class ProductsService {
   async findById(id: ObjectId) {
     const product = await this.productRepository.findById(id);
 
-    if (!product)
+    if (!product || product.isDeleted) {
       throw new NotFoundException(`Product with id "${id}" not found`);
-
+    }
     return product;
   }
 
@@ -71,14 +77,16 @@ export class ProductsService {
   }
 
   async softDelete(id: ObjectId) {
-    const product: any = await this.findById(id);
+    const product = await this.findById(id);
 
-    await product.delete();
-    product.status = 'Deprecated';
-    await product.save();
+    if (product) {
+      product.status = 'Deprecated';
+      await product.save();
+      await this.productRepository.softDelete({ _id: id });
+    }
 
     return {
-      message: `Product with id "${id}" has been soft deleted`,
+      message: `Product with id ${id} has been soft deleted`,
     };
   }
 
