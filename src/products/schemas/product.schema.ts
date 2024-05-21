@@ -3,7 +3,7 @@ import {
   Schema as DecoratorSchema,
   SchemaFactory,
 } from '@nestjs/mongoose';
-import { Document, Schema } from 'mongoose';
+import { Document, Schema, SchemaTimestampsConfig } from 'mongoose';
 import {
   Attribute,
   CATEGORIES,
@@ -13,8 +13,10 @@ import {
 } from '../interfaces/product.interface';
 import { softDeletePlugin } from 'soft-delete-plugin-mongoose';
 
+export type ProductDocument = Product & Document & SchemaTimestampsConfig;
+
 @DecoratorSchema({ timestamps: true })
-export class Product extends Document {
+export class Product {
   @Prop({ type: String, required: true })
   name: string;
 
@@ -46,6 +48,8 @@ export class Product extends Document {
   location?: string;
 
   isDeleted: boolean;
+
+  deleteAt?: string | null;
 }
 
 export const ProductSchema =
