@@ -104,11 +104,24 @@ export class ProductsService {
 
   async tableGrouping() {
     return await this.productRepository.aggregate([
+      // Filtramos los atributos para excluir aquellos cuyo key sea "color"
+      {
+        $addFields: {
+          filteredAttributes: {
+            $filter: {
+              input: '$attributes',
+              as: 'attribute',
+              cond: { $ne: ['$$attribute.key', 'color'] },
+            },
+          },
+        },
+      },
+      // Agrupamos por los atributos filtrados
       {
         $group: {
           _id: {
             category: '$category',
-            attributes: '$attributes.value',
+            attributes: '$filteredAttributes.value',
             name: { $toLower: '$name' },
           },
           products: { $push: '$$ROOT' },
