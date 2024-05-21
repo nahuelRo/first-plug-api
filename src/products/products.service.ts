@@ -1,12 +1,12 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ClientSession, Model, ObjectId } from 'mongoose';
-import { Product } from './schemas/product.schema';
+import { ProductDocument } from './schemas/product.schema';
 import { CreateProductDto, UpdateProductDto } from './dto';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 
 export interface ProductModel
-  extends Model<Product>,
-    SoftDeleteModel<Product> {}
+  extends Model<ProductDocument>,
+    SoftDeleteModel<ProductDocument> {}
 
 @Injectable()
 export class ProductsService {
@@ -104,6 +104,11 @@ export class ProductsService {
 
   async tableGrouping() {
     return await this.productRepository.aggregate([
+      {
+        $match: {
+          isDeleted: false,
+        },
+      },
       // Filtramos los atributos para excluir aquellos cuyo key sea "color"
       {
         $addFields: {
