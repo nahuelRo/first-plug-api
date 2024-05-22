@@ -121,7 +121,6 @@ export class MembersService {
   }
 
   private handleDBExceptions(error: any) {
-    console.log(error);
     if (error.code === 11000) {
       throw new BadRequestException(`Email is already in use`);
     }
