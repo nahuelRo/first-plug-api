@@ -6,7 +6,6 @@ import {
   Patch,
   Param,
   Delete,
-  ParseArrayPipe,
   Res,
   HttpStatus,
   UseGuards,
@@ -17,6 +16,7 @@ import { Response } from 'express';
 import { ObjectId } from 'mongoose';
 import { ParseMongoIdPipe } from '../common/pipes/parse-mongo-id.pipe';
 import { JwtGuard } from 'src/auth/guard/jwt.guard';
+import { CreateMemberArrayDto } from './dto/create-member-array.dto';
 
 @Controller('members')
 @UseGuards(JwtGuard)
@@ -30,15 +30,13 @@ export class MembersController {
 
   @Post('/bulkcreate')
   async bulkcreate(
-    @Body(new ParseArrayPipe({ items: CreateMemberDto }))
-    createMemberDto: CreateMemberDto[],
+    @Body()
+    createMemberDto: CreateMemberArrayDto,
     @Res() res: Response,
   ) {
-    const createdCount = await this.membersService.bulkcreate(createMemberDto);
+    const members = await this.membersService.bulkcreate(createMemberDto);
 
-    res.status(HttpStatus.CREATED).json({
-      message: `Bulk create successful: ${createdCount} documents inserted successfully out of ${createMemberDto.length}.`,
-    });
+    res.status(HttpStatus.CREATED).json(members);
   }
 
   // @Post('/assign-many-products')
@@ -69,6 +67,6 @@ export class MembersController {
 
   @Delete(':id')
   remove(@Param('id', ParseMongoIdPipe) id: ObjectId) {
-    return this.membersService.remove(id);
+    return this.membersService.softDelete(id);
   }
 }

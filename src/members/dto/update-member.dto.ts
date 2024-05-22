@@ -1,4 +1,4 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateMemberDto } from './create-member.dto';
+import { createZodDto } from '@anatine/zod-nestjs';
+import { MemberSchemaZod } from '../validations/create-member.zod';
 
-export class UpdateMemberDto extends PartialType(CreateMemberDto) {}
+export class UpdateMemberDto extends createZodDto(MemberSchemaZod.partial()) {}
