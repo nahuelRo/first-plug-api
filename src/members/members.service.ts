@@ -2,27 +2,42 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 import { Model, ObjectId } from 'mongoose';
-import { Member } from './schemas/member.schema';
+import { MemberDocument } from './schemas/member.schema';
 import { ProductsService } from '../products/products.service';
+import { CreateMemberArrayDto } from './dto/create-member-array.dto';
+import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
+
+export interface MemberModel
+  extends Model<MemberDocument>,
+    SoftDeleteModel<MemberDocument> {}
 
 @Injectable()
 export class MembersService {
   constructor(
-    @Inject('MEMBER_MODEL') private memberRepository: Model<Member>,
+    @Inject('MEMBER_MODEL') private memberRepository: MemberModel,
     private productsService: ProductsService,
   ) {}
 
   async create(createMemberDto: CreateMemberDto) {
-    return await this.memberRepository.create(createMemberDto);
+    try {
+      return await this.memberRepository.create(createMemberDto);
+    } catch (error) {
+      this.handleDBExceptions(error);
+    }
   }
 
-  async bulkcreate(createMemberDto: CreateMemberDto[]) {
-    return (await this.memberRepository.insertMany(createMemberDto)).length;
+  async bulkcreate(createMemberDto: CreateMemberArrayDto) {
+    try {
+      return await this.memberRepository.insertMany(createMemberDto);
+    } catch (error) {
+      this.handleDBExceptions(error);
+    }
   }
 
   async findAll() {
@@ -34,6 +49,15 @@ export class MembersService {
 
     if (!member)
       throw new NotFoundException(`Member with id "${id}" not found`);
+
+    return member;
+  }
+
+  async findByEmail(email: string) {
+    const member = await this.memberRepository.find({ email: email });
+
+    if (!member)
+      throw new NotFoundException(`Member with email "${email}" not found`);
 
     return member;
   }
@@ -83,13 +107,26 @@ export class MembersService {
     });
   }
 
-  async remove(id: ObjectId) {
-    const { deletedCount } = await this.memberRepository.deleteOne({
-      _id: id,
-    });
+  async softDelete(id: ObjectId) {
+    const product = await this.findById(id);
 
-    if (deletedCount === 0) {
-      throw new BadRequestException(`Member with id "${id}" not found`);
+    if (product) {
+      await product.save();
+      await this.memberRepository.softDelete({ _id: id });
     }
+
+    return {
+      message: `Product with id ${id} has been soft deleted`,
+    };
+  }
+
+  private handleDBExceptions(error: any) {
+    if (error.code === 11000) {
+      throw new BadRequestException(`Email is already in use`);
+    }
+
+    throw new InternalServerErrorException(
+      'Unexcepted error, check server log',
+    );
   }
 }
