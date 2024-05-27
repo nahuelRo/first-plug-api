@@ -137,7 +137,6 @@ export const COMPUTER_BRANDS = [
   'Lenovo',
   'MSI',
   'Other',
-  '',
 ] as const;
 
 export const PERIPHERALS_BRANDS = [
@@ -146,12 +145,11 @@ export const PERIPHERALS_BRANDS = [
   'Sony',
   'Logitech',
   'Other',
-  '',
 ] as const;
 
-export const AUDIO_BRANDS = ['Apple', 'Sony', 'Logitech', 'Other', ''] as const;
+export const AUDIO_BRANDS = ['Apple', 'Sony', 'Logitech', 'Other'] as const;
 
-export const MONITOR_BRANDS = ['Samsung', 'LG', 'Other', ''] as const;
+export const MONITOR_BRANDS = ['Samsung', 'LG', 'Other'] as const;
 
 // Attributes by model
 
@@ -226,7 +224,6 @@ export const COMPUTER_MODELS = [
   'Yoga Serie Slim',
   'Zenbook',
   'Other',
-  '',
 ] as const;
 
 export const AUDIO_MODELS = [
@@ -257,7 +254,6 @@ export const AUDIO_MODELS = [
   'Zone Vibe 100',
   'Zone Vibe 125',
   'Other',
-  '',
 ] as const;
 
 export const MONITOR_MODELS = [
@@ -272,7 +268,6 @@ export const MONITOR_MODELS = [
   'UltraGear Monitor',
   'UltraWide Monitor',
   'Other',
-  '',
 ] as const;
 
 export const PERIPHERALS_MODELS = [
@@ -340,5 +335,4 @@ export const PERIPHERALS_MODELS = [
   'SM1 Slim Teclado Mecanico Bluetooth',
   'Waterproof Laptop Case',
   'Other',
-  '',
 ] as const;

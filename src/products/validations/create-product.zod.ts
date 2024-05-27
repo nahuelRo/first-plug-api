@@ -15,7 +15,7 @@ import {
 
 export const ProductSchemaZod = z
   .object({
-    name: z.string().min(1),
+    name: z.string().optional(),
     category: z.enum(CATEGORIES),
     attributes: z
       .array(
@@ -40,13 +40,19 @@ export const ProductSchemaZod = z
     location: z.enum(LOCATIONS),
     status: z.enum(STATES),
   })
-  .transform((data) => {
+  .superRefine((data, ctx) => {
+    if (data.category === 'Merchandising' && !data.name) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Name is required for Merchandising category.',
+        path: ['name'],
+      });
+    }
     if (data.category === 'Merchandising') {
       data.recoverable = false;
     } else {
       data.recoverable = true;
     }
-    return data;
   })
   .refine(
     (data) => {
