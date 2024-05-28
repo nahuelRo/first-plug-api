@@ -17,7 +17,9 @@ export type ProductDocument = Product & Document & SchemaTimestampsConfig;
 
 @DecoratorSchema({ timestamps: true })
 export class Product {
-  @Prop({ type: String, required: true })
+  @Prop({
+    type: String,
+  })
   name: string;
 
   @Prop({ enum: CATEGORIES, required: true })
@@ -35,7 +37,10 @@ export class Product {
   @Prop({ type: Boolean, required: true })
   recoverable: boolean;
 
-  @Prop({ type: String })
+  @Prop({
+    type: String,
+    unique: true,
+  })
   serialNumber?: string;
 
   @Prop({ type: String })

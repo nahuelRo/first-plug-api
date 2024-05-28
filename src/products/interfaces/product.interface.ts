@@ -8,6 +8,8 @@ import {
   KEYBOARDLENGUAGES,
   MONITOR_BRANDS,
   MONITOR_MODELS,
+  OTHER_BRANDS,
+  OTHER_MODELS,
   PERIPHERALS_BRANDS,
   PERIPHERALS_MODELS,
   PROCESSORS,
@@ -107,3 +109,7 @@ export type AudioModel = (typeof AUDIO_MODELS)[number];
 export type MonitorModel = (typeof MONITOR_MODELS)[number];
 
 export type PeripheralsModel = (typeof PERIPHERALS_MODELS)[number];
+
+export type OtherModel = (typeof OTHER_MODELS)[number];
+
+export type OtherBrand = (typeof OTHER_BRANDS)[number];
