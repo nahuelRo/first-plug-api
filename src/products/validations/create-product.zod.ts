@@ -53,6 +53,23 @@ export const ProductSchemaZod = z
     } else {
       data.recoverable = true;
     }
+    if (data.category !== 'Merchandising') {
+      const attributeKeys = data.attributes.map((attr) => attr.key);
+      if (!attributeKeys.includes('brand')) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Brand is required for this category.',
+          path: ['attributes'],
+        });
+      }
+      if (!attributeKeys.includes('model')) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Model is required for this category.',
+          path: ['attributes'],
+        });
+      }
+    }
   })
   .refine(
     (data) => {

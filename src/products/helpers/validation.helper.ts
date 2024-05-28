@@ -14,6 +14,8 @@ import {
   KEYBOARDLENGUAGES,
   MONITOR_BRANDS,
   MONITOR_MODELS,
+  OTHER_BRANDS,
+  OTHER_MODELS,
   PERIPHERALS_BRANDS,
   PERIPHERALS_MODELS,
   PROCESSORS,
@@ -114,7 +116,7 @@ export function validateAttributeValues(
         }
         break;
       case 'brand':
-        if (attr.key === 'brand' && category && category !== 'Other') {
+        if (category) {
           let allowedBrands: string[] = [];
 
           if (category === 'Computer') {
@@ -125,6 +127,8 @@ export function validateAttributeValues(
             allowedBrands = [...AUDIO_BRANDS];
           } else if (category === 'Monitor') {
             allowedBrands = [...MONITOR_BRANDS];
+          } else if (category === 'Other') {
+            allowedBrands = [...OTHER_BRANDS];
           }
 
           if (!allowedBrands.includes(attr.value)) {
@@ -136,7 +140,7 @@ export function validateAttributeValues(
         }
         break;
       case 'model':
-        if (attr.key === 'model' && category && category !== 'Other') {
+        if (category) {
           let allowedModels: string[] = [];
 
           if (category === 'Computer') {
@@ -147,6 +151,8 @@ export function validateAttributeValues(
             allowedModels = [...AUDIO_MODELS];
           } else if (category === 'Monitor') {
             allowedModels = [...MONITOR_MODELS];
+          } else if (category === 'Other') {
+            allowedModels = [...OTHER_MODELS];
           }
 
           if (!allowedModels.includes(attr.value)) {
