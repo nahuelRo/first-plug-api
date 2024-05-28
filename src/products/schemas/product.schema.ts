@@ -19,17 +19,6 @@ export type ProductDocument = Product & Document & SchemaTimestampsConfig;
 export class Product {
   @Prop({
     type: String,
-    validate: {
-      validator: function (value: string) {
-        return (
-          this.category !== 'Merchandising' ||
-          (this.category === 'Merchandising' &&
-            value &&
-            value.trim().length > 0)
-        );
-      },
-      message: 'Name is required for Merchandising category.',
-    },
   })
   name: string;
 
