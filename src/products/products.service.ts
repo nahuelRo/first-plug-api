@@ -3,6 +3,10 @@ import { ClientSession, Model, ObjectId } from 'mongoose';
 import { ProductDocument } from './schemas/product.schema';
 import { CreateProductDto, UpdateProductDto } from './dto';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 
 export interface ProductModel
   extends Model<ProductDocument>,
@@ -15,12 +19,30 @@ export class ProductsService {
     private readonly productRepository: ProductModel,
   ) {}
 
+  private handleDBExceptions(error: any) {
+    if (error.code === 11000) {
+      throw new BadRequestException(`Serial Number already exists`);
+    }
+
+    throw new InternalServerErrorException(
+      'Unexcepted error, check server log',
+    );
+  }
+
   async create(createProductDto: CreateProductDto) {
-    return await this.productRepository.create(createProductDto);
+    try {
+      return await this.productRepository.create(createProductDto);
+    } catch (error) {
+      this.handleDBExceptions(error);
+    }
   }
 
   async bulkcreate(createProductDto: CreateProductDto[]) {
-    return await this.productRepository.insertMany(createProductDto);
+    try {
+      return await this.productRepository.insertMany(createProductDto);
+    } catch (error) {
+      this.handleDBExceptions(error);
+    }
   }
 
   async findAll() {
