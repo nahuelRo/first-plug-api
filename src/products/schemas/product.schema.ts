@@ -37,7 +37,10 @@ export class Product {
   @Prop({ type: Boolean, required: true })
   recoverable: boolean;
 
-  @Prop({ type: String })
+  @Prop({
+    type: String,
+    unique: true,
+  })
   serialNumber?: string;
 
   @Prop({ type: String })
