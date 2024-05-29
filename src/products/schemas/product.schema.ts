@@ -39,9 +39,11 @@ export class Product {
 
   @Prop({
     type: String,
+    required: false,
     unique: true,
+    sparse: true,
   })
-  serialNumber?: string;
+  serialNumber: string | null;
 
   @Prop({ type: String })
   assignedEmail?: string;

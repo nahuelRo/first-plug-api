@@ -31,7 +31,13 @@ export class ProductsService {
 
   async create(createProductDto: CreateProductDto) {
     try {
-      return await this.productRepository.create(createProductDto);
+      const { serialNumber, ...rest } = createProductDto;
+      const createData =
+        serialNumber && serialNumber.trim() !== ''
+          ? { ...rest, serialNumber }
+          : rest;
+
+      return await this.productRepository.create(createData);
     } catch (error) {
       this.handleDBExceptions(error);
     }
