@@ -33,7 +33,16 @@ export const ProductSchemaZod = z
           message: 'Attribute keys must be unique.',
         },
       ),
-    serialNumber: z.string().optional(),
+    serialNumber: z
+      .string()
+      .nullable()
+      .optional()
+      .refine(
+        (value) => value === null || value === undefined || value.trim() !== '',
+        {
+          message: 'Serial Number must be non-empty if provided.',
+        },
+      ),
     recoverable: z.boolean().default(true).optional(),
     assignedEmail: z.string().optional(),
     acquisitionDate: z.string().optional(),
