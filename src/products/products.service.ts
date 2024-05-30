@@ -45,7 +45,14 @@ export class ProductsService {
 
   async bulkcreate(createProductDto: CreateProductDto[]) {
     try {
-      return await this.productRepository.insertMany(createProductDto);
+      const createData = createProductDto.map((product) => {
+        const { serialNumber, ...rest } = product;
+        return serialNumber && serialNumber.trim() !== ''
+          ? { ...rest, serialNumber }
+          : rest;
+      });
+
+      return await this.productRepository.insertMany(createData);
     } catch (error) {
       this.handleDBExceptions(error);
     }
