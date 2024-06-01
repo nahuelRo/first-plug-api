@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, SchemaTimestampsConfig } from 'mongoose';
+import mongoose, { Document, SchemaTimestampsConfig } from 'mongoose';
 import { Product } from '../../products/schemas/product.schema';
 import { softDeletePlugin } from 'soft-delete-plugin-mongoose';
 
@@ -7,6 +7,8 @@ export type MemberDocument = Member & Document & SchemaTimestampsConfig;
 
 @Schema({ timestamps: true })
 export class Member {
+  _id?: mongoose.Schema.Types.ObjectId;
+
   @Prop({ type: String, required: true })
   firstName: string;
 
@@ -57,8 +59,8 @@ export class Member {
   @Prop({ type: String })
   startDate?: string;
 
-  @Prop({ type: [{ type: Product }] })
-  products?: Product[];
+  @Prop({ type: [{ type: Product }], default: [] })
+  products: Product[];
 
   @Prop({ type: Array })
   team?: string;

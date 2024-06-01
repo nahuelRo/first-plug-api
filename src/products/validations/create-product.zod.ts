@@ -36,6 +36,7 @@ export const ProductSchemaZod = z
     serialNumber: z.string().optional(),
     recoverable: z.boolean().default(true).optional(),
     assignedEmail: z.string().optional(),
+    assignedMember: z.string().optional(),
     acquisitionDate: z.string().optional(),
     location: z.enum(LOCATIONS),
     status: z.enum(STATES),
