@@ -8,6 +8,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { MembersService } from 'src/members/members.service';
+import { Attribute } from './interfaces/product.interface';
 
 export interface ProductModel
   extends Model<ProductDocument>,
@@ -109,8 +110,12 @@ export class ProductsService {
         serialNumber,
       } = product;
       const filteredAttributes = attributes.filter(
-        (attribute) => attribute.key !== 'color',
+        (attribute: Attribute) =>
+          attribute.key !== 'color' &&
+          attribute.key !== 'keyboardLanguage' &&
+          attribute.key !== 'gpu',
       );
+
       return {
         _id,
         category,
@@ -134,7 +139,9 @@ export class ProductsService {
       (acc, product) => {
         const key = JSON.stringify({
           category: product.category,
-          attributes: product.filteredAttributes.map((attr) => attr.value),
+          attributes: product.filteredAttributes
+            .sort((a, b) => a.key.localeCompare(b.key))
+            .map((atr) => atr.value),
         });
 
         if (!acc[key]) {
