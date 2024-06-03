@@ -22,9 +22,27 @@ export class ProductsService {
     private readonly memberService: MembersService,
   ) {}
 
+  private async validateSerialNumber(serialNumber: string) {
+    if (!serialNumber || serialNumber.trim() === '') {
+      return;
+    }
+    const productWithSameSerialNumber = await this.productRepository.findOne({
+      serialNumber,
+    });
+    const memberProductWithSameSerialNumber =
+      await this.memberService.findProductBySerialNumber(serialNumber);
+    if (productWithSameSerialNumber || memberProductWithSameSerialNumber) {
+      throw new BadRequestException('Serial Number already exists');
+    }
+  }
+
   async create(createProductDto: CreateProductDto) {
     try {
       const { assignedEmail, serialNumber, ...rest } = createProductDto;
+
+      if (serialNumber && serialNumber.trim() !== '') {
+        await this.validateSerialNumber(serialNumber);
+      }
 
       const createData =
         serialNumber && serialNumber.trim() !== ''
@@ -34,7 +52,7 @@ export class ProductsService {
       if (assignedEmail) {
         const member = await this.memberService.assignProduct(
           assignedEmail,
-          createProductDto,
+          createData,
         );
 
         if (member) {

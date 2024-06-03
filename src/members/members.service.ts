@@ -83,14 +83,32 @@ export class MembersService {
     };
   }
 
+  async findProductBySerialNumber(serialNumber: string) {
+    if (!serialNumber || serialNumber.trim() === '') {
+      return null;
+    }
+    const member = await this.memberRepository.findOne({
+      'products.serialNumber': serialNumber,
+    });
+    return member
+      ? member.products.find((product) => product.serialNumber === serialNumber)
+      : null;
+  }
+
   async assignProduct(email: string, createProductDto: CreateProductDto) {
     const member = await this.findByEmailNotThrowError(email);
 
     if (member) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { assignedEmail, ...rest } = createProductDto;
-      rest.assignedMember = `${member.firstName} ${member.lastName}`;
-      member.products.push(rest);
+      const { assignedEmail, serialNumber, ...rest } = createProductDto;
+
+      const productData =
+        serialNumber && serialNumber.trim() !== ''
+          ? { ...rest, serialNumber }
+          : rest;
+
+      productData.assignedMember = `${member.firstName} ${member.lastName}`;
+      member.products.push(productData);
       member.save();
     }
 
