@@ -33,7 +33,10 @@ export const ProductSchemaZod = z
           message: 'Attribute keys must be unique.',
         },
       ),
-    serialNumber: z.string().optional(),
+    serialNumber: z
+      .string()
+      .transform((val) => val.toLowerCase())
+      .optional(),
     recoverable: z.boolean().default(true).optional(),
     assignedEmail: z.string().optional(),
     assignedMember: z.string().optional(),
