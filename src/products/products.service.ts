@@ -1,12 +1,14 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Model, ObjectId } from 'mongoose';
 import { ProductDocument } from './schemas/product.schema';
 import { CreateProductDto, UpdateProductDto } from './dto';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
-import {
-  BadRequestException,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { MembersService } from 'src/members/members.service';
 import { Attribute } from './interfaces/product.interface';
 
@@ -31,48 +33,54 @@ export class ProductsService {
     });
     const memberProductWithSameSerialNumber =
       await this.memberService.findProductBySerialNumber(serialNumber);
+
     if (productWithSameSerialNumber || memberProductWithSameSerialNumber) {
       throw new BadRequestException('Serial Number already exists');
     }
   }
 
   async create(createProductDto: CreateProductDto) {
-    try {
-      const { assignedEmail, serialNumber, ...rest } = createProductDto;
+    const { assignedEmail, serialNumber, ...rest } = createProductDto;
 
-      if (serialNumber && serialNumber.trim() !== '') {
-        await this.validateSerialNumber(serialNumber);
-      }
-
-      const createData =
-        serialNumber && serialNumber.trim() !== ''
-          ? { ...rest, serialNumber }
-          : rest;
-
-      if (assignedEmail) {
-        const member = await this.memberService.assignProduct(
-          assignedEmail,
-          createData,
-        );
-
-        if (member) {
-          return member.products.at(-1);
-        }
-      }
-
-      return await this.productRepository.create({
-        ...createData,
-        assignedEmail,
-      });
-    } catch (error) {
-      this.handleDBExceptions(error);
+    if (serialNumber && serialNumber.trim() !== '') {
+      await this.validateSerialNumber(serialNumber);
     }
+
+    const createData =
+      serialNumber && serialNumber.trim() !== ''
+        ? { ...rest, serialNumber }
+        : rest;
+
+    if (assignedEmail) {
+      const member = await this.memberService.assignProduct(
+        assignedEmail,
+        createData,
+      );
+
+      if (member) {
+        return member.products.at(-1);
+      }
+    }
+
+    return await this.productRepository.create({
+      ...createData,
+      assignedEmail,
+    });
   }
 
   async bulkcreate(createProductDto: CreateProductDto[]) {
     try {
+      for (const product of createProductDto) {
+        const { serialNumber } = product;
+
+        if (serialNumber && serialNumber.trim() !== '') {
+          await this.validateSerialNumber(serialNumber);
+        }
+      }
+
       const createData = createProductDto.map((product) => {
         const { serialNumber, ...rest } = product;
+
         return serialNumber && serialNumber.trim() !== ''
           ? { ...rest, serialNumber }
           : rest;
@@ -96,7 +104,11 @@ export class ProductsService {
 
       return await Promise.all([...createPromises, insertManyPromise]);
     } catch (error) {
-      this.handleDBExceptions(error);
+      if (error instanceof BadRequestException) {
+        throw new BadRequestException(`Serial Number already exists`);
+      } else {
+        throw new InternalServerErrorException();
+      }
     }
   }
 
@@ -297,15 +309,5 @@ export class ProductsService {
     return {
       message: `Product with id ${id} has been soft deleted`,
     };
-  }
-
-  private handleDBExceptions(error: any) {
-    if (error.code === 11000) {
-      throw new BadRequestException(`Serial Number already exists`);
-    }
-
-    throw new InternalServerErrorException(
-      'Unexcepted error, check server log',
-    );
   }
 }
