@@ -167,23 +167,40 @@ export class ProductsService {
 
     const groupedProducts = productsWithFilteredAttributes.reduce(
       (acc, product) => {
-        const key = JSON.stringify({
-          category: product.category,
-          attributes: product.filteredAttributes
-            .sort((a, b) => a.key.localeCompare(b.key))
-            .map((atr) => atr.value),
-        });
-
-        if (!acc[key]) {
-          acc[key] = {
+        if (product.category !== 'Merchandising') {
+          const key = JSON.stringify({
             category: product.category,
+            attributes: product.filteredAttributes
+              .sort((a, b) => a.key.localeCompare(b.key))
+              .map((atr) => atr.value),
+          });
 
-            products: [],
-          };
+          if (!acc[key]) {
+            acc[key] = {
+              category: product.category,
+
+              products: [],
+            };
+          }
+
+          acc[key].products.push(product);
+          return acc;
+        } else {
+          const key = JSON.stringify({
+            category: product.category,
+            name: product.name,
+          });
+
+          if (!acc[key]) {
+            acc[key] = {
+              category: product.category,
+              products: [],
+            };
+          }
+
+          acc[key].products.push(product);
+          return acc;
         }
-
-        acc[key].products.push(product);
-        return acc;
       },
       {},
     );
