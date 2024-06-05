@@ -290,4 +290,16 @@ export class ProductsService {
       'Unexcepted error, check server log',
     );
   }
+
+  async getAvailableProducts() {
+    const products = await this.productRepository.find({
+      isDeleted: false,
+      status: 'Available',
+    });
+    const memberProducts = await this.memberService.getAllProductsWithMembers();
+    const allProducts = [...products, ...memberProducts].filter(
+      (product) => product.status === 'Available',
+    );
+    return allProducts;
+  }
 }

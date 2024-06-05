@@ -43,6 +43,10 @@ export class ProductsController {
   getProductsTable() {
     return this.productsService.tableGrouping();
   }
+  @Get('/available')
+  getAvailableProducts() {
+    return this.productsService.getAvailableProducts();
+  }
 
   @Get(':id')
   findById(@Param('id', ParseMongoIdPipe) id: ObjectId) {

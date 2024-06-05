@@ -6,7 +6,7 @@ export const MemberSchemaZod = z.object({
   firstName: z.string().min(1).trim(),
   lastName: z.string().min(1).trim(),
   email: z.string().email().trim().toLowerCase(),
-  picture: z.instanceof(File).optional(),
+  picture: z.string().optional(),
   position: z.string().trim().optional(),
   personalEmail: z.string().email().trim().toLowerCase().optional(),
   phone: z.string().trim().refine(validator.isMobilePhone),
