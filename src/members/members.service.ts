@@ -9,9 +9,10 @@ import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 import { Model, ObjectId } from 'mongoose';
 import { MemberDocument } from './schemas/member.schema';
-import { ProductsService } from '../products/products.service';
+
 import { CreateMemberArrayDto } from './dto/create-member-array.dto';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
+import { CreateProductDto } from 'src/products/dto';
 
 export interface MemberModel
   extends Model<MemberDocument>,
@@ -19,10 +20,7 @@ export interface MemberModel
 
 @Injectable()
 export class MembersService {
-  constructor(
-    @Inject('MEMBER_MODEL') private memberRepository: MemberModel,
-    private productsService: ProductsService,
-  ) {}
+  constructor(@Inject('MEMBER_MODEL') private memberRepository: MemberModel) {}
 
   async create(createMemberDto: CreateMemberDto) {
     try {
@@ -54,7 +52,7 @@ export class MembersService {
   }
 
   async findByEmail(email: string) {
-    const member = await this.memberRepository.find({ email: email });
+    const member = await this.memberRepository.findOne({ email: email });
 
     if (!member)
       throw new NotFoundException(`Member with email "${email}" not found`);
@@ -62,44 +60,9 @@ export class MembersService {
     return member;
   }
 
-  // async assignManyProductsToMember(
-  //   memberId: ObjectId,
-  //   productsIds: ObjectId[],
-  // ) {
-  //   const session = await this.memberRepository.db.startSession();
-  //   session.startTransaction();
-
-  //   try {
-  //     const member = await this.memberRepository
-  //       .findById(memberId)
-  //       .session(session);
-
-  //     if (!member) {
-  //       throw new Error('Member not found');
-  //     }
-
-  //     const productsToDelete = await this.productsService.getAllByIds(
-  //       productsIds,
-  //       session,
-  //     );
-
-  //     await this.productsService.deleteMany(productsIds, session);
-
-  //     if (member.products) {
-  //       member.products.push(...productsToDelete);
-  //     }
-
-  //     await member.save({ session });
-
-  //     await session.commitTransaction();
-  //   } catch (error) {
-  //     await session.abortTransaction();
-  //     console.log(error);
-  //     throw error;
-  //   } finally {
-  //     session.endSession();
-  //   }
-  // }
+  async findByEmailNotThrowError(email: string) {
+    return await this.memberRepository.findOne({ email: email });
+  }
 
   async update(id: ObjectId, updateMemberDto: UpdateMemberDto) {
     return await this.memberRepository.findByIdAndUpdate(id, updateMemberDto, {
@@ -118,6 +81,78 @@ export class MembersService {
     return {
       message: `Product with id ${id} has been soft deleted`,
     };
+  }
+
+  async findProductBySerialNumber(serialNumber: string) {
+    if (!serialNumber || serialNumber.trim() === '') {
+      return null;
+    }
+    const member = await this.memberRepository.findOne({
+      'products.serialNumber': serialNumber,
+    });
+    return member
+      ? member.products.find((product) => product.serialNumber === serialNumber)
+      : null;
+  }
+
+  async assignProduct(email: string, createProductDto: CreateProductDto) {
+    const member = await this.findByEmailNotThrowError(email);
+
+    if (member) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { assignedEmail, serialNumber, ...rest } = createProductDto;
+
+      const productData =
+        serialNumber && serialNumber.trim() !== ''
+          ? { ...rest, serialNumber }
+          : rest;
+
+      productData.assignedMember = `${member.firstName} ${member.lastName}`;
+      member.products.push(productData);
+      member.save();
+    }
+
+    return member;
+  }
+
+  async getAllProductsWithMembers() {
+    const members = await this.memberRepository.find();
+
+    return members.flatMap((member) => member.products || []);
+  }
+
+  async getProductByMembers(id: ObjectId) {
+    const members = await this.memberRepository.find();
+
+    for (const member of members) {
+      const products = member.products || [];
+      const product = products.find(
+        (product) => product._id!.toString() === id.toString(),
+      );
+
+      if (product) {
+        return { member, product };
+      }
+    }
+  }
+
+  async deleteProductFromMember(memberId: ObjectId, productId: ObjectId) {
+    try {
+      const member = await this.memberRepository.findById(memberId);
+
+      if (!member) {
+        throw new Error(`Member with id ${memberId} not found`);
+      }
+
+      member.products = member.products.filter(
+        (product) => product!._id!.toString() !== productId.toString(),
+      );
+
+      await member.save();
+    } catch (error) {
+      console.error('Error while deleting product from member:', error);
+      throw error;
+    }
   }
 
   private handleDBExceptions(error: any) {

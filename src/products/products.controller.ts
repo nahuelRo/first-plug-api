@@ -39,10 +39,6 @@ export class ProductsController {
     res.status(HttpStatus.CREATED).json(products);
   }
 
-  @Get()
-  findAll() {
-    return this.productsService.findAll();
-  }
   @Get('/table')
   getProductsTable() {
     return this.productsService.tableGrouping();

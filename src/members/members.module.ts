@@ -4,11 +4,10 @@ import { MembersController } from './members.controller';
 import { TenantsModule } from '../tenants/tenants.module';
 import { TenantsMiddleware } from '../common/middlewares/tenants.middleware';
 import { tenantModels } from '../common/providers/tenant-models-provider';
-import { ProductsModule } from 'src/products/products.module';
 import { JwtService } from '@nestjs/jwt';
 
 @Module({
-  imports: [TenantsModule, ProductsModule],
+  imports: [TenantsModule],
   controllers: [MembersController],
   providers: [MembersService, tenantModels.memberModel, JwtService],
   exports: [MembersService],

@@ -3,7 +3,7 @@ import {
   Schema as DecoratorSchema,
   SchemaFactory,
 } from '@nestjs/mongoose';
-import { Document, Schema, SchemaTimestampsConfig } from 'mongoose';
+import mongoose, { Document, Schema, SchemaTimestampsConfig } from 'mongoose';
 import {
   Attribute,
   CATEGORIES,
@@ -17,10 +17,12 @@ export type ProductDocument = Product & Document & SchemaTimestampsConfig;
 
 @DecoratorSchema({ timestamps: true })
 export class Product {
+  _id?: mongoose.Schema.Types.ObjectId;
+
   @Prop({
     type: String,
   })
-  name: string;
+  name?: string;
 
   @Prop({ enum: CATEGORIES, required: true })
   category: Category;
@@ -35,7 +37,7 @@ export class Product {
   status: Status;
 
   @Prop({ type: Boolean, required: true })
-  recoverable: boolean;
+  recoverable?: boolean;
 
   @Prop({
     type: String,
@@ -43,10 +45,16 @@ export class Product {
     unique: true,
     sparse: true,
   })
-  serialNumber: string | null;
+  serialNumber?: string | null;
 
   @Prop({ type: String })
   assignedEmail?: string;
+
+  @Prop({ type: String })
+  assignedMember?: string;
+
+  @Prop({ type: String })
+  lastAssigned?: string;
 
   @Prop({ type: String })
   acquisitionDate?: string;
@@ -54,7 +62,7 @@ export class Product {
   @Prop({ type: String })
   location?: string;
 
-  isDeleted: boolean;
+  isDeleted?: boolean;
 
   deleteAt?: string | null;
 }
