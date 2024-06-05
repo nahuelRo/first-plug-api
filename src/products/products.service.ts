@@ -207,7 +207,21 @@ export class ProductsService {
 
     const result = Object.values(groupedProducts);
 
-    return result;
+    // return result;
+    // Ordenar los productos: primero los de categoría "Computer" y luego el resto por orden alfabético de categoría
+
+    const sortedResult = result
+      // @ts-ignore
+      .filter((group) => group.category === 'Computer')
+      .concat(
+        result
+          // @ts-ignore
+          .filter((group) => group.category !== 'Computer')
+          // @ts-ignore
+          .sort((a, b) => a.category.localeCompare(b.category)),
+      );
+
+    return sortedResult;
   }
 
   async findById(id: ObjectId) {
