@@ -6,7 +6,8 @@ export class TeamsController {
   constructor(private readonly teamsService: TeamsService) {}
 
   @Get()
-  findAll() {
-    return this.teamsService.findAll();
+  async findAll() {
+    const teams = await this.teamsService.findAll();
+    return teams;
   }
 }
