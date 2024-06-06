@@ -25,7 +25,7 @@ export class TeamsService {
         },
       ])
       .exec();
-    console.log('Aggregated teams:', result);
+
     return result.length > 0 ? result[0].teams : [];
   }
 }
