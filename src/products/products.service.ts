@@ -249,38 +249,118 @@ export class ProductsService {
   }
 
   async update(id: ObjectId, updateProductDto: UpdateProductDto) {
-    const product = await this.productRepository.findById(id);
+    let product = await this.productRepository.findById(id);
+    const assignedEmail: string =
+      updateProductDto.assignedEmail?.trim().toLowerCase() === 'none' ||
+      !updateProductDto.assignedEmail?.trim()
+        ? 'none'
+        : updateProductDto.assignedEmail;
 
-    if (product) {
-      const updatedProduct = await this.productRepository.findByIdAndUpdate(
-        id,
-        updateProductDto,
-        { new: true },
-      );
+    console.log('Starting update process for product:', product);
+    console.log('New assignedEmail:', assignedEmail);
 
-      return updatedProduct;
-    }
+    const session = await this.productRepository.db.startSession();
+    session.startTransaction();
 
-    const memberProduct = await this.memberService.getProductByMembers(id);
-
-    if (memberProduct?.product) {
-      const member = memberProduct.member;
-      const productIndex = member.products.findIndex(
-        (p) => p!._id!.toString() === id.toString(),
-      );
-
-      if (productIndex !== -1) {
-        member.products[productIndex] = {
-          ...member.products[productIndex],
-          ...updateProductDto,
-        };
-        await member.save();
-
-        return member.products[productIndex];
+    try {
+      if (!product) {
+        // Busco en los members si no esta en products
+        const memberProduct = await this.memberService.getProductByMembers(id);
+        if (memberProduct?.product) {
+          product = memberProduct.product as any;
+        } else {
+          throw new NotFoundException(`Product with id "${id}" not found`);
+        }
       }
-    }
 
-    throw new NotFoundException(`Product with id "${id}" not found`);
+      if (product) {
+        if (assignedEmail === 'none') {
+          console.log(
+            'Moving product from member to general products collection.',
+          );
+          // Muevo el producto del member a la coleccion de products
+          if (product.assignedEmail && product.assignedEmail !== 'none') {
+            await this.memberService.removeProductFromMember(
+              product.assignedEmail,
+              id,
+              session,
+            );
+          }
+          await this.productRepository.create(
+            {
+              ...updateProductDto,
+              assignedEmail: 'none',
+              assignedMember: '',
+              _id: id,
+            },
+            { session },
+          );
+        } else {
+          const member =
+            await this.memberService.findByEmailNotThrowError(assignedEmail);
+          if (member) {
+            console.log(
+              'Moving product from general products collection to member.',
+            );
+            // Muevo de la coleccion de products al member
+            if (product.assignedEmail === 'none') {
+              await this.productRepository.findByIdAndDelete(id, { session });
+              await this.memberService.addProductToMember(
+                assignedEmail,
+                { ...updateProductDto, assignedEmail },
+                session,
+              );
+            } else {
+              await this.memberService.updateProductInMember(
+                assignedEmail,
+                id,
+                updateProductDto,
+                session,
+              );
+            }
+          } else {
+            // Mantengo en la coleccion de products con el mail asignado que no pertenece a ningun member
+            console.log(
+              'Keeping product in general products collection with new assignedEmail.',
+            );
+            await this.productRepository.findByIdAndUpdate(
+              id,
+              updateProductDto,
+              { new: true, session },
+            );
+          }
+        }
+
+        await session.commitTransaction();
+        session.endSession();
+        return updateProductDto;
+      }
+
+      const memberProduct = await this.memberService.getProductByMembers(id);
+
+      if (memberProduct?.product) {
+        const member = memberProduct.member;
+        const productIndex = member.products.findIndex(
+          (p) => p!._id!.toString() === id.toString(),
+        );
+
+        if (productIndex !== -1) {
+          member.products[productIndex] = {
+            ...member.products[productIndex],
+            ...updateProductDto,
+          };
+          await member.save();
+
+          return member.products[productIndex];
+        }
+      }
+
+      throw new NotFoundException(`Product with id "${id}" not found`);
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
+    }
   }
 
   async softDelete(id: ObjectId) {

@@ -164,4 +164,60 @@ export class MembersService {
       'Unexcepted error, check server log',
     );
   }
+
+  async removeProductFromMember(
+    email: string,
+    productId: ObjectId,
+    session: any,
+  ) {
+    console.log(`Removing product ${productId} from member ${email}`);
+    const member = await this.memberRepository
+      .findOne({ email: email })
+      .session(session);
+    if (member) {
+      member.products = member.products.filter(
+        (product) =>
+          product._id && product._id.toString() !== productId.toString(),
+      );
+      await member.save();
+    } else {
+      console.error(`Member with email ${email} not found.`);
+    }
+  }
+
+  async addProductToMember(email: string, productData: any, session: any) {
+    console.log(`Adding product to member ${email}`, productData);
+    const member = await this.memberRepository
+      .findOne({ email: email })
+      .session(session);
+    if (member) {
+      member.products.push(productData);
+      await member.save();
+    } else {
+      console.error(`Member with email ${email} not found.`);
+    }
+  }
+
+  async updateProductInMember(
+    email: string,
+    productId: ObjectId,
+    updateProductDto: any,
+    session: any,
+  ) {
+    const member = await this.memberRepository
+      .findOne({ email: email })
+      .session(session);
+    if (member) {
+      const productIndex = member.products.findIndex(
+        (p) => p._id!.toString() === productId.toString(),
+      );
+      if (productIndex !== -1) {
+        member.products[productIndex] = {
+          ...member.products[productIndex],
+          ...updateProductDto,
+        };
+        await member.save();
+      }
+    }
+  }
 }
