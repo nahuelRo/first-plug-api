@@ -11,29 +11,21 @@ export class TeamsService {
 
   async findAll() {
     const result = await this.memberRepository
-      .aggregate<{ data: string[] }>([
+      .aggregate<{ teams: string[] }>([
         {
           $match: {
-            teams: { $not: { $size: 0 } },
+            team: { $exists: true, $ne: null },
           },
-        },
-        {
-          $project: {
-            _id: 0,
-            teams: 1,
-          },
-        },
-        {
-          $unwind: '$teams',
         },
         {
           $group: {
             _id: null,
-            data: { $addToSet: '$teams' },
+            teams: { $addToSet: '$team' },
           },
         },
       ])
       .exec();
-    return result[0]?.data ?? [];
+    console.log('Aggregated teams:', result);
+    return result.length > 0 ? result[0].teams : [];
   }
 }
