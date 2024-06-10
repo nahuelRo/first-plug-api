@@ -65,9 +65,17 @@ export class MembersService {
   }
 
   async update(id: ObjectId, updateMemberDto: UpdateMemberDto) {
-    return await this.memberRepository.findByIdAndUpdate(id, updateMemberDto, {
-      new: true,
-    });
+    try {
+      return await this.memberRepository.findByIdAndUpdate(
+        id,
+        updateMemberDto,
+        {
+          new: true,
+        },
+      );
+    } catch (error) {
+      this.handleDBExceptions(error);
+    }
   }
 
   async softDelete(id: ObjectId) {
