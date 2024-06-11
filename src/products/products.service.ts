@@ -291,15 +291,21 @@ export class ProductsService {
           }
 
           newMember.products.push({
-            ...product,
+            _id: product._id,
+            name: product.name,
+            category: product.category,
+            attributes: product.attributes,
+            status: updateProductDto.status || product.status,
+            recoverable: product.recoverable,
             assignedEmail: updateProductDto.assignedEmail,
             assignedMember: updateProductDto.assignedMember,
-            status: updateProductDto.status || product.status,
+            acquisitionDate: product.acquisitionDate,
             location: updateProductDto.location || product.location,
+            isDeleted: product.isDeleted,
           });
           await newMember.save({ session });
 
-          await this.productRepository.findByIdAndDelete(id).session(session); // Elimina el producto de la colección original
+          await this.productRepository.findByIdAndDelete(id).session(session);
         } else if (updateProductDto.assignedEmail === 'none') {
           if (product.assignedEmail && product.assignedEmail !== 'none') {
             const currentMember = await this.memberService.findByEmail(
@@ -318,12 +324,18 @@ export class ProductsService {
           await this.productRepository.create(
             [
               {
-                ...product,
-                lastAssigned: product.assignedEmail,
+                _id: product._id,
+                name: product.name,
+                category: product.category,
+                attributes: product.attributes,
+                status: updateProductDto.status || product.status,
+                recoverable: product.recoverable,
                 assignedEmail: 'none',
                 assignedMember: '',
-                status: updateProductDto.status || product.status,
+                lastAssigned: product.assignedEmail,
+                acquisitionDate: product.acquisitionDate,
                 location: updateProductDto.location || product.location,
+                isDeleted: product.isDeleted,
               },
             ],
             { session },
@@ -356,6 +368,20 @@ export class ProductsService {
         if (productIndex !== -1) {
           const currentProduct = member.products[productIndex];
 
+          const plainCurrentProduct = {
+            _id: currentProduct._id,
+            name: currentProduct.name,
+            category: currentProduct.category,
+            attributes: currentProduct.attributes,
+            status: currentProduct.status,
+            recoverable: currentProduct.recoverable,
+            assignedEmail: currentProduct.assignedEmail,
+            assignedMember: currentProduct.assignedMember,
+            acquisitionDate: currentProduct.acquisitionDate,
+            location: currentProduct.location,
+            isDeleted: currentProduct.isDeleted,
+          };
+
           if (
             updateProductDto.assignedEmail &&
             updateProductDto.assignedEmail !== 'none'
@@ -375,11 +401,12 @@ export class ProductsService {
             await member.save({ session });
 
             newMember.products.push({
-              ...currentProduct,
+              ...plainCurrentProduct,
               assignedEmail: updateProductDto.assignedEmail,
               assignedMember: updateProductDto.assignedMember,
-              status: updateProductDto.status || currentProduct.status,
-              location: updateProductDto.location || currentProduct.location,
+              status: updateProductDto.status || plainCurrentProduct.status,
+              location:
+                updateProductDto.location || plainCurrentProduct.location,
             });
             await newMember.save({ session });
 
@@ -396,13 +423,13 @@ export class ProductsService {
             await this.productRepository.create(
               [
                 {
-                  ...currentProduct,
-                  lastAssigned: currentProduct.assignedEmail,
+                  ...plainCurrentProduct,
+                  lastAssigned: plainCurrentProduct.assignedEmail,
                   assignedEmail: 'none',
                   assignedMember: '',
-                  status: updateProductDto.status || currentProduct.status,
+                  status: updateProductDto.status || plainCurrentProduct.status,
                   location:
-                    updateProductDto.location || currentProduct.location,
+                    updateProductDto.location || plainCurrentProduct.location,
                 },
               ],
               { session },
