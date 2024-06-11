@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
-import { Model, ObjectId } from 'mongoose';
+import { ClientSession, Model, ObjectId } from 'mongoose';
 import { MemberDocument } from './schemas/member.schema';
 
 import { CreateMemberArrayDto } from './dto/create-member-array.dto';
@@ -51,8 +51,10 @@ export class MembersService {
     return member;
   }
 
-  async findByEmail(email: string) {
-    const member = await this.memberRepository.findOne({ email: email });
+  async findByEmail(email: string, session?: ClientSession) {
+    const member = await this.memberRepository
+      .findOne({ email: email })
+      .session(session || null);
 
     if (!member)
       throw new NotFoundException(`Member with email "${email}" not found`);
@@ -103,12 +105,15 @@ export class MembersService {
       : null;
   }
 
-  async assignProduct(email: string, createProductDto: CreateProductDto) {
+  async assignProduct(
+    email: string,
+    createProductDto: CreateProductDto,
+    session?: ClientSession,
+  ) {
     const member = await this.findByEmailNotThrowError(email);
 
     if (member) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { assignedEmail, serialNumber, ...rest } = createProductDto;
+      const { serialNumber, ...rest } = createProductDto;
 
       const productData =
         serialNumber && serialNumber.trim() !== ''
@@ -117,7 +122,7 @@ export class MembersService {
 
       productData.assignedMember = `${member.firstName} ${member.lastName}`;
       member.products.push(productData);
-      member.save();
+      await member.save({ session });
     }
 
     return member;
@@ -129,8 +134,8 @@ export class MembersService {
     return members.flatMap((member) => member.products || []);
   }
 
-  async getProductByMembers(id: ObjectId) {
-    const members = await this.memberRepository.find();
+  async getProductByMembers(id: ObjectId, session?: ClientSession) {
+    const members = await this.memberRepository.find().session(session || null);
 
     for (const member of members) {
       const products = member.products || [];
@@ -144,19 +149,25 @@ export class MembersService {
     }
   }
 
-  async deleteProductFromMember(memberId: ObjectId, productId: ObjectId) {
+  async deleteProductFromMember(
+    memberId: ObjectId,
+    productId: ObjectId,
+    session?: ClientSession,
+  ) {
     try {
-      const member = await this.memberRepository.findById(memberId);
+      const member = await this.memberRepository
+        .findById(memberId)
+        .session(session || null);
 
       if (!member) {
         throw new Error(`Member with id ${memberId} not found`);
       }
 
       member.products = member.products.filter(
-        (product) => product!._id!.toString() !== productId.toString(),
+        (product) => product?._id?.toString() !== productId.toString(),
       );
 
-      await member.save();
+      await member.save({ session });
     } catch (error) {
       console.error('Error while deleting product from member:', error);
       throw error;
