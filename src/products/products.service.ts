@@ -260,7 +260,10 @@ export class ProductsService {
         .findById(id)
         .session(session);
 
+      console.log('Producto encontrado en products:', product);
+
       if (product) {
+        // Asigno un producto de Products a un miembro de Members
         if (
           updateProductDto.assignedEmail &&
           updateProductDto.assignedEmail !== 'none'
@@ -269,6 +272,8 @@ export class ProductsService {
             updateProductDto.assignedEmail,
             session,
           );
+
+          console.log('Nuevo miembro encontrado:', newMember);
 
           if (!newMember) {
             throw new NotFoundException(
@@ -282,11 +287,14 @@ export class ProductsService {
               session,
             );
 
+            console.log('Miembro actual encontrado:', currentMember);
+
             if (currentMember) {
               currentMember.products = currentMember.products.filter(
                 (prod) => prod._id?.toString() !== id.toString(),
               );
               await currentMember.save({ session });
+              console.log('Producto eliminado del miembro actual');
             }
           }
 
@@ -302,15 +310,26 @@ export class ProductsService {
             acquisitionDate: product.acquisitionDate,
             location: updateProductDto.location || product.location,
             isDeleted: product.isDeleted,
+            lastAssigned: product.assignedMember,
           });
           await newMember.save({ session });
 
           await this.productRepository.findByIdAndDelete(id).session(session);
+          console.log(
+            'Producto asignado a nuevo miembro y eliminado de products',
+          );
+          // Desasigno un producto de members para enviarlo a products
         } else if (updateProductDto.assignedEmail === 'none') {
+          console.log('Desasignar producto:', product);
           if (product.assignedEmail && product.assignedEmail !== 'none') {
             const currentMember = await this.memberService.findByEmail(
               product.assignedEmail,
               session,
+            );
+
+            console.log(
+              'Miembro actual para desasignar encontrado:',
+              currentMember,
             );
 
             if (currentMember) {
@@ -318,6 +337,7 @@ export class ProductsService {
                 (prod) => prod._id?.toString() !== id.toString(),
               );
               await currentMember.save({ session });
+              console.log('Producto eliminado del miembro actual');
             }
           }
 
@@ -332,7 +352,7 @@ export class ProductsService {
                 recoverable: product.recoverable,
                 assignedEmail: 'none',
                 assignedMember: '',
-                lastAssigned: product.assignedEmail,
+                lastAssigned: product.assignedMember,
                 acquisitionDate: product.acquisitionDate,
                 location: updateProductDto.location || product.location,
                 isDeleted: product.isDeleted,
@@ -340,6 +360,8 @@ export class ProductsService {
             ],
             { session },
           );
+          console.log('Producto creado en products');
+          // Actualizar producto en products
         } else {
           await this.productRepository.updateOne(
             { _id: id },
@@ -358,6 +380,7 @@ export class ProductsService {
         id,
         session,
       );
+      console.log('Producto encontrado en members:', memberProduct);
 
       if (memberProduct?.product) {
         const member = memberProduct.member;
@@ -382,6 +405,8 @@ export class ProductsService {
             isDeleted: currentProduct.isDeleted,
           };
 
+          // Reasignar producto entre members
+
           if (
             updateProductDto.assignedEmail &&
             updateProductDto.assignedEmail !== 'none'
@@ -390,6 +415,7 @@ export class ProductsService {
               updateProductDto.assignedEmail,
               session,
             );
+            console.log('Nuevo miembro encontrado para reasignar:', newMember);
 
             if (!newMember) {
               throw new NotFoundException(
@@ -407,6 +433,7 @@ export class ProductsService {
               status: updateProductDto.status || plainCurrentProduct.status,
               location:
                 updateProductDto.location || plainCurrentProduct.location,
+              lastAssigned: plainCurrentProduct.assignedMember,
             });
             await newMember.save({ session });
 
@@ -416,15 +443,18 @@ export class ProductsService {
             return {
               message: `Product with id "${id}" reassigned successfully`,
             };
+            //  desasignar producto de members a products
           } else if (updateProductDto.assignedEmail === 'none') {
+            console.log('Desasignar producto de member:', plainCurrentProduct);
             member.products.splice(productIndex, 1);
             await member.save({ session });
+            console.log('Producto eliminado del miembro actual');
 
-            await this.productRepository.create(
+            const createdProduct = await this.productRepository.create(
               [
                 {
                   ...plainCurrentProduct,
-                  lastAssigned: plainCurrentProduct.assignedEmail,
+                  lastAssigned: plainCurrentProduct.assignedMember,
                   assignedEmail: 'none',
                   assignedMember: '',
                   status: updateProductDto.status || plainCurrentProduct.status,
@@ -434,6 +464,7 @@ export class ProductsService {
               ],
               { session },
             );
+            console.log('Producto creado en products', createdProduct);
 
             await session.commitTransaction();
             session.endSession();
@@ -441,6 +472,7 @@ export class ProductsService {
             return {
               message: `Product with id "${id}" unassigned successfully`,
             };
+            // Actualizar producto en members
           } else {
             Object.assign(member.products[productIndex], updateProductDto);
             await member.save({ session });
