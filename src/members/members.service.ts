@@ -80,16 +80,42 @@ export class MembersService {
     }
   }
 
-  async softDelete(id: ObjectId) {
-    const product = await this.findById(id);
+  async softDeleteMember(id: ObjectId) {
+    const member = await this.findById(id);
 
-    if (product) {
-      await product.save();
-      await this.memberRepository.softDelete({ _id: id });
+    if (!member) {
+      throw new NotFoundException(`Member with id "${id}" not found`);
     }
 
+    const hasRecoverableProducts = member.products.some(
+      (product) => product.recoverable,
+    );
+    const hasNonRecoverableProducts = member.products.some(
+      (product) => !product.recoverable,
+    );
+
+    if (hasRecoverableProducts) {
+      throw new BadRequestException(
+        'Cannot delete a member with recoverable products assigned. Please unassign the products first.',
+      );
+    }
+
+    if (hasNonRecoverableProducts) {
+      member.products.forEach((product) => {
+        if (!product.recoverable) {
+          product.status = 'Deprecated';
+          product.isDeleted = true;
+        }
+      });
+    }
+
+    member.$isDeleted(true);
+    await member.save();
+
+    await this.memberRepository.softDelete({ _id: id });
+
     return {
-      message: `Product with id ${id} has been soft deleted`,
+      message: `Member with id ${id} has been soft deleted`,
     };
   }
 
