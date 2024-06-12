@@ -264,7 +264,8 @@ export class ProductsService {
         // Asigno un producto de Products a un miembro de Members
         if (
           updateProductDto.assignedEmail &&
-          updateProductDto.assignedEmail !== 'none'
+          updateProductDto.assignedEmail !== 'none' &&
+          updateProductDto.assignedEmail !== ''
         ) {
           const newMember = await this.memberService.findByEmail(
             updateProductDto.assignedEmail,
@@ -309,7 +310,10 @@ export class ProductsService {
 
           await this.productRepository.findByIdAndDelete(id).session(session);
           // Desasigno un producto de members para enviarlo a products
-        } else if (updateProductDto.assignedEmail === 'none') {
+        } else if (
+          updateProductDto.assignedEmail === 'none' ||
+          updateProductDto.assignedEmail === ''
+        ) {
           console.log('Desasignar producto:', product);
           if (product.assignedEmail && product.assignedEmail !== 'none') {
             const currentMember = await this.memberService.findByEmail(
@@ -391,7 +395,8 @@ export class ProductsService {
 
           if (
             updateProductDto.assignedEmail &&
-            updateProductDto.assignedEmail !== 'none'
+            updateProductDto.assignedEmail !== 'none' &&
+            updateProductDto.assignedEmail !== ''
           ) {
             const newMember = await this.memberService.findByEmail(
               updateProductDto.assignedEmail,
@@ -425,7 +430,10 @@ export class ProductsService {
               message: `Product with id "${id}" reassigned successfully`,
             };
             //  desasignar producto de members a products
-          } else if (updateProductDto.assignedEmail === 'none') {
+          } else if (
+            updateProductDto.assignedEmail === 'none' ||
+            updateProductDto.assignedEmail === ''
+          ) {
             member.products.splice(productIndex, 1);
             await member.save({ session });
 
