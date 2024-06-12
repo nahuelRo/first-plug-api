@@ -260,8 +260,6 @@ export class ProductsService {
         .findById(id)
         .session(session);
 
-      console.log('Producto encontrado en products:', product);
-
       if (product) {
         // Asigno un producto de Products a un miembro de Members
         if (
@@ -272,8 +270,6 @@ export class ProductsService {
             updateProductDto.assignedEmail,
             session,
           );
-
-          console.log('Nuevo miembro encontrado:', newMember);
 
           if (!newMember) {
             throw new NotFoundException(
@@ -287,14 +283,11 @@ export class ProductsService {
               session,
             );
 
-            console.log('Miembro actual encontrado:', currentMember);
-
             if (currentMember) {
               currentMember.products = currentMember.products.filter(
                 (prod) => prod._id?.toString() !== id.toString(),
               );
               await currentMember.save({ session });
-              console.log('Producto eliminado del miembro actual');
             }
           }
 
@@ -315,9 +308,6 @@ export class ProductsService {
           await newMember.save({ session });
 
           await this.productRepository.findByIdAndDelete(id).session(session);
-          console.log(
-            'Producto asignado a nuevo miembro y eliminado de products',
-          );
           // Desasigno un producto de members para enviarlo a products
         } else if (updateProductDto.assignedEmail === 'none') {
           console.log('Desasignar producto:', product);
@@ -327,17 +317,11 @@ export class ProductsService {
               session,
             );
 
-            console.log(
-              'Miembro actual para desasignar encontrado:',
-              currentMember,
-            );
-
             if (currentMember) {
               currentMember.products = currentMember.products.filter(
                 (prod) => prod._id?.toString() !== id.toString(),
               );
               await currentMember.save({ session });
-              console.log('Producto eliminado del miembro actual');
             }
           }
 
@@ -360,7 +344,6 @@ export class ProductsService {
             ],
             { session },
           );
-          console.log('Producto creado en products');
           // Actualizar producto en products
         } else {
           await this.productRepository.updateOne(
@@ -380,7 +363,6 @@ export class ProductsService {
         id,
         session,
       );
-      console.log('Producto encontrado en members:', memberProduct);
 
       if (memberProduct?.product) {
         const member = memberProduct.member;
@@ -415,7 +397,6 @@ export class ProductsService {
               updateProductDto.assignedEmail,
               session,
             );
-            console.log('Nuevo miembro encontrado para reasignar:', newMember);
 
             if (!newMember) {
               throw new NotFoundException(
@@ -445,12 +426,10 @@ export class ProductsService {
             };
             //  desasignar producto de members a products
           } else if (updateProductDto.assignedEmail === 'none') {
-            console.log('Desasignar producto de member:', plainCurrentProduct);
             member.products.splice(productIndex, 1);
             await member.save({ session });
-            console.log('Producto eliminado del miembro actual');
 
-            const createdProduct = await this.productRepository.create(
+            await this.productRepository.create(
               [
                 {
                   ...plainCurrentProduct,
@@ -464,7 +443,6 @@ export class ProductsService {
               ],
               { session },
             );
-            console.log('Producto creado en products', createdProduct);
 
             await session.commitTransaction();
             session.endSession();
