@@ -67,6 +67,6 @@ export class MembersController {
 
   @Delete(':id')
   remove(@Param('id', ParseMongoIdPipe) id: ObjectId) {
-    return this.membersService.softDelete(id);
+    return this.membersService.softDeleteMember(id);
   }
 }
