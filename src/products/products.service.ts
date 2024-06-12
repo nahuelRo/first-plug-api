@@ -11,6 +11,8 @@ import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { BadRequestException } from '@nestjs/common';
 import { MembersService } from 'src/members/members.service';
 import { Attribute } from './interfaces/product.interface';
+import { InjectConnection } from '@nestjs/mongoose';
+import { Connection } from 'mongoose';
 
 export interface ProductModel
   extends Model<ProductDocument>,
@@ -22,6 +24,7 @@ export class ProductsService {
     @Inject('PRODUCT_MODEL')
     private readonly productRepository: ProductModel,
     private readonly memberService: MembersService,
+    @InjectConnection() private readonly connection: Connection,
   ) {}
 
   private async validateSerialNumber(serialNumber: string) {
@@ -211,13 +214,13 @@ export class ProductsService {
     // Ordenar los productos: primero los de categoría "Computer" y luego el resto por orden alfabético de categoría
 
     const sortedResult = result
-      // @ts-ignore
+      // @ts-expect-error as @ts-ignore
       .filter((group) => group.category === 'Computer')
       .concat(
         result
-          // @ts-ignore
+          // @ts-expect-error as @ts-ignore
           .filter((group) => group.category !== 'Computer')
-          // @ts-ignore
+          // @ts-expect-error as @ts-ignore
           .sort((a, b) => a.category.localeCompare(b.category)),
       );
 
@@ -249,96 +252,314 @@ export class ProductsService {
   }
 
   async update(id: ObjectId, updateProductDto: UpdateProductDto) {
-    const product = await this.productRepository.findById(id);
+    const session = await this.connection.startSession();
+    session.startTransaction();
 
-    if (product) {
-      const updatedProduct = await this.productRepository.findByIdAndUpdate(
-        id,
-        updateProductDto,
-        { new: true },
-      );
+    try {
+      const product = await this.productRepository
+        .findById(id)
+        .session(session);
 
-      return updatedProduct;
-    }
+      if (product) {
+        // Asigno un producto de Products a un miembro de Members
+        if (
+          updateProductDto.assignedEmail &&
+          updateProductDto.assignedEmail !== 'none' &&
+          updateProductDto.assignedEmail !== ''
+        ) {
+          const newMember = await this.memberService.findByEmail(
+            updateProductDto.assignedEmail,
+            session,
+          );
 
-    const memberProduct = await this.memberService.getProductByMembers(id);
+          if (!newMember) {
+            throw new NotFoundException(
+              `Member with email "${updateProductDto.assignedEmail}" not found`,
+            );
+          }
 
-    if (memberProduct?.product) {
-      const member = memberProduct.member;
-      const productIndex = member.products.findIndex(
-        (p) => p!._id!.toString() === id.toString(),
-      );
+          if (product.assignedEmail && product.assignedEmail !== 'none') {
+            const currentMember = await this.memberService.findByEmail(
+              product.assignedEmail,
+              session,
+            );
 
-      if (productIndex !== -1) {
-        member.products[productIndex] = {
-          ...member.products[productIndex],
-          ...updateProductDto,
-        };
-        await member.save();
+            if (currentMember) {
+              currentMember.products = currentMember.products.filter(
+                (prod) => prod._id?.toString() !== id.toString(),
+              );
+              await currentMember.save({ session });
+            }
+          }
 
-        return member.products[productIndex];
+          newMember.products.push({
+            _id: product._id,
+            name: product.name,
+            category: product.category,
+            attributes: product.attributes,
+            status: updateProductDto.status || product.status,
+            recoverable: product.recoverable,
+            assignedEmail: updateProductDto.assignedEmail,
+            assignedMember: updateProductDto.assignedMember,
+            acquisitionDate: product.acquisitionDate,
+            location: updateProductDto.location || product.location,
+            isDeleted: product.isDeleted,
+            lastAssigned: product.assignedMember,
+          });
+          await newMember.save({ session });
+
+          await this.productRepository.findByIdAndDelete(id).session(session);
+          // Desasigno un producto de members para enviarlo a products
+        } else if (
+          updateProductDto.assignedEmail === 'none' ||
+          updateProductDto.assignedEmail === ''
+        ) {
+          console.log('Desasignar producto:', product);
+          if (product.assignedEmail && product.assignedEmail !== 'none') {
+            const currentMember = await this.memberService.findByEmail(
+              product.assignedEmail,
+              session,
+            );
+
+            if (currentMember) {
+              currentMember.products = currentMember.products.filter(
+                (prod) => prod._id?.toString() !== id.toString(),
+              );
+              await currentMember.save({ session });
+            }
+          }
+
+          await this.productRepository.create(
+            [
+              {
+                _id: product._id,
+                name: product.name,
+                category: product.category,
+                attributes: product.attributes,
+                status: updateProductDto.status || product.status,
+                recoverable: product.recoverable,
+                assignedEmail: 'none',
+                assignedMember: '',
+                lastAssigned: product.assignedMember,
+                acquisitionDate: product.acquisitionDate,
+                location: updateProductDto.location || product.location,
+                isDeleted: product.isDeleted,
+              },
+            ],
+            { session },
+          );
+          // Actualizar producto en products
+        } else {
+          await this.productRepository.updateOne(
+            { _id: id },
+            { $set: updateProductDto },
+            { session, runValidators: true, new: true, omitUndefined: true },
+          );
+        }
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return { message: `Product with id "${id}" updated successfully` };
       }
-    }
 
-    throw new NotFoundException(`Product with id "${id}" not found`);
+      const memberProduct = await this.memberService.getProductByMembers(
+        id,
+        session,
+      );
+
+      if (memberProduct?.product) {
+        const member = memberProduct.member;
+        const productIndex = member.products.findIndex(
+          (prod) => prod._id!.toString() === id.toString(),
+        );
+
+        if (productIndex !== -1) {
+          const currentProduct = member.products[productIndex];
+
+          const plainCurrentProduct = {
+            _id: currentProduct._id,
+            name: currentProduct.name,
+            category: currentProduct.category,
+            attributes: currentProduct.attributes,
+            status: currentProduct.status,
+            recoverable: currentProduct.recoverable,
+            assignedEmail: currentProduct.assignedEmail,
+            assignedMember: currentProduct.assignedMember,
+            acquisitionDate: currentProduct.acquisitionDate,
+            location: currentProduct.location,
+            isDeleted: currentProduct.isDeleted,
+          };
+
+          // Reasignar producto entre members
+
+          if (
+            updateProductDto.assignedEmail &&
+            updateProductDto.assignedEmail !== 'none' &&
+            updateProductDto.assignedEmail !== ''
+          ) {
+            const newMember = await this.memberService.findByEmail(
+              updateProductDto.assignedEmail,
+              session,
+            );
+
+            if (!newMember) {
+              throw new NotFoundException(
+                `Member with email "${updateProductDto.assignedEmail}" not found`,
+              );
+            }
+
+            member.products.splice(productIndex, 1);
+            await member.save({ session });
+
+            newMember.products.push({
+              ...plainCurrentProduct,
+              assignedEmail: updateProductDto.assignedEmail,
+              assignedMember: updateProductDto.assignedMember,
+              status: updateProductDto.status || plainCurrentProduct.status,
+              location:
+                updateProductDto.location || plainCurrentProduct.location,
+              lastAssigned: plainCurrentProduct.assignedMember,
+            });
+            await newMember.save({ session });
+
+            await session.commitTransaction();
+            session.endSession();
+
+            return {
+              message: `Product with id "${id}" reassigned successfully`,
+            };
+            //  desasignar producto de members a products
+          } else if (
+            updateProductDto.assignedEmail === 'none' ||
+            updateProductDto.assignedEmail === ''
+          ) {
+            member.products.splice(productIndex, 1);
+            await member.save({ session });
+
+            await this.productRepository.create(
+              [
+                {
+                  ...plainCurrentProduct,
+                  lastAssigned: plainCurrentProduct.assignedMember,
+                  assignedEmail: 'none',
+                  assignedMember: '',
+                  status: updateProductDto.status || plainCurrentProduct.status,
+                  location:
+                    updateProductDto.location || plainCurrentProduct.location,
+                },
+              ],
+              { session },
+            );
+
+            await session.commitTransaction();
+            session.endSession();
+
+            return {
+              message: `Product with id "${id}" unassigned successfully`,
+            };
+            // Actualizar producto en members
+          } else {
+            Object.assign(member.products[productIndex], updateProductDto);
+            await member.save({ session });
+
+            await session.commitTransaction();
+            session.endSession();
+
+            return { message: `Product with id "${id}" updated successfully` };
+          }
+        }
+      }
+
+      throw new NotFoundException(`Product with id "${id}" not found`);
+    } catch (error) {
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
+      session.endSession();
+      throw error;
+    }
   }
 
   async softDelete(id: ObjectId) {
-    const product = await this.productRepository.findById(id);
+    const session = await this.connection.startSession();
+    session.startTransaction();
 
-    if (product) {
-      product.status = 'Deprecated';
-      await product.save();
-      await this.productRepository.softDelete({ _id: id });
+    try {
+      const product = await this.productRepository
+        .findById(id)
+        .session(session);
 
-      return {
-        message: `Product with id ${id} has been soft deleted`,
-      };
+      if (product) {
+        product.status = 'Deprecated';
+        await product.save();
+        await this.productRepository.softDelete({ _id: id }, { session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return {
+          message: `Product with id ${id} has been soft deleted`,
+        };
+      }
+
+      const memberProduct = await this.memberService.getProductByMembers(id);
+
+      if (memberProduct && memberProduct.product) {
+        const {
+          _id,
+          name,
+          attributes,
+          category,
+          assignedEmail,
+          assignedMember,
+          acquisitionDate,
+          deleteAt,
+          isDeleted,
+          location,
+          recoverable,
+          serialNumber,
+        } = memberProduct.product;
+
+        await this.productRepository.create(
+          [
+            {
+              _id,
+              name,
+              attributes,
+              category,
+              assignedEmail,
+              assignedMember,
+              acquisitionDate,
+              deleteAt,
+              isDeleted,
+              location,
+              recoverable,
+              serialNumber,
+              lastAssigned: memberProduct.member.email,
+              status: 'Deprecated',
+            },
+          ],
+          { session },
+        );
+
+        await this.productRepository.softDelete({ _id: id }, { session });
+
+        const memberId = memberProduct.member._id;
+        await this.memberService.deleteProductFromMember(memberId, id);
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return {
+          message: `Product with id ${id} has been soft deleted`,
+        };
+      }
+      throw new NotFoundException(`Product with id "${id}" not found`);
+    } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
+      throw error;
     }
-
-    const memberProduct = await this.memberService.getProductByMembers(id);
-
-    if (memberProduct && memberProduct.product) {
-      const {
-        _id,
-        name,
-        attributes,
-        category,
-        assignedEmail,
-        assignedMember,
-        acquisitionDate,
-        deleteAt,
-        isDeleted,
-        location,
-        recoverable,
-        serialNumber,
-      } = memberProduct.product;
-
-      await this.productRepository.create({
-        _id,
-        name,
-        attributes,
-        category,
-        assignedEmail,
-        assignedMember,
-        acquisitionDate,
-        deleteAt,
-        isDeleted,
-        location,
-        recoverable,
-        serialNumber,
-        lastAssigned: memberProduct.member.email,
-        status: 'Deprecated',
-      });
-
-      await this.productRepository.softDelete({ _id: id });
-
-      const memberId = memberProduct.member._id;
-      await this.memberService.deleteProductFromMember(memberId, id);
-    }
-
-    return {
-      message: `Product with id ${id} has been soft deleted`,
-    };
   }
 }
