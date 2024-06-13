@@ -31,6 +31,7 @@ export class ProductsService {
     if (!serialNumber || serialNumber.trim() === '') {
       return;
     }
+
     const productWithSameSerialNumber = await this.productRepository.findOne({
       serialNumber,
     });
@@ -73,6 +74,26 @@ export class ProductsService {
 
   async bulkcreate(createProductDto: CreateProductDto[]) {
     try {
+      const productsWithSerialNumbers = createProductDto.filter(
+        (product) => product.serialNumber,
+      );
+      const seenSerialNumbers = new Set<string>();
+      const duplicates = new Set<string>();
+
+      productsWithSerialNumbers.forEach((product) => {
+        if (product.serialNumber) {
+          if (seenSerialNumbers.has(product.serialNumber)) {
+            duplicates.add(product.serialNumber);
+          } else {
+            seenSerialNumbers.add(product.serialNumber);
+          }
+        }
+      });
+
+      if (duplicates.size > 0) {
+        throw new BadRequestException(`Serial Number already exists`);
+      }
+
       for (const product of createProductDto) {
         const { serialNumber } = product;
 
