@@ -13,6 +13,7 @@ import { MembersService } from 'src/members/members.service';
 import { Attribute } from './interfaces/product.interface';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
+import { MemberDocument } from 'src/members/schemas/member.schema';
 
 export interface ProductModel
   extends Model<ProductDocument>,
@@ -272,6 +273,80 @@ export class ProductsService {
     throw new NotFoundException(`Product with id "${id}" not found`);
   }
 
+  async getProductForReassign(productId: ObjectId) {
+    let product: ProductDocument | null =
+      await this.productRepository.findById(productId);
+    let currentMember: MemberDocument | null = null;
+
+    if (!product) {
+      const memberProduct =
+        await this.memberService.getProductByMembers(productId);
+      if (!memberProduct) {
+        throw new NotFoundException(`Product with id "${productId}" not found`);
+      }
+      product = memberProduct.product as ProductDocument;
+      currentMember = memberProduct.member as MemberDocument;
+    } else {
+      currentMember = product.assignedEmail
+        ? await this.memberService.findByEmail(product.assignedEmail)
+        : null;
+    }
+
+    const members = await this.memberService.findAll();
+
+    const options = members
+      .filter(
+        (member) =>
+          member.email !== product!.assignedEmail && !member.$isDeleted(),
+      )
+      .map((member) => ({
+        email: member.email,
+        name: `${member.firstName} ${member.lastName}`,
+        team: member.team,
+      }));
+
+    return { product, options, currentMember };
+  }
+
+  async getProductForAssign(productId: ObjectId) {
+    const product = await this.productRepository.findById(productId);
+    if (!product) {
+      throw new NotFoundException(`Product with id "${productId}" not found`);
+    }
+
+    const members = await this.memberService.findAll();
+
+    let options;
+
+    if (product.assignedEmail === '') {
+      options = members
+        .filter((member) => member.$isDeleted)
+        .map((member) => ({
+          email: member.email,
+          name: `${member.firstName} ${member.lastName}`,
+          team: member.team,
+        }));
+    } else if (product.assignedEmail !== '' && product.assignedMember === '') {
+      options = members
+        .filter((member) => member.$isDeleted)
+        .map((member) => ({
+          email: member.email,
+          name: `${member.firstName} ${member.lastName}`,
+          team: member.team,
+        }));
+      options.push({ email: 'none', name: 'None', team: '' });
+    }
+
+    return { product, options };
+  }
+
+  async reassignProduct(id: ObjectId, updateProductDto: UpdateProductDto) {
+    if (updateProductDto.assignedEmail === 'none') {
+      updateProductDto.assignedEmail = '';
+    }
+    return this.update(id, updateProductDto);
+  }
+
   async update(id: ObjectId, updateProductDto: UpdateProductDto) {
     const session = await this.connection.startSession();
     session.startTransaction();
@@ -335,7 +410,6 @@ export class ProductsService {
           await this.productRepository.findByIdAndDelete(id).session(session);
           // Desasigno un producto de members para enviarlo a products
         } else if (updateProductDto.assignedEmail === '') {
-          console.log('Desasignar producto:', product);
           if (product.assignedEmail && product.assignedEmail !== '') {
             const currentMember = await this.memberService.findByEmail(
               product.assignedEmail,
