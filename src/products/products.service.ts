@@ -282,10 +282,13 @@ export class ProductsService {
         .session(session);
 
       if (product) {
+        if (updateProductDto.assignedEmail === 'none') {
+          updateProductDto.assignedEmail = '';
+        }
+
         // Asigno un producto de Products a un miembro de Members
         if (
           updateProductDto.assignedEmail &&
-          updateProductDto.assignedEmail !== 'none' &&
           updateProductDto.assignedEmail !== ''
         ) {
           const newMember = await this.memberService.findByEmail(
@@ -299,7 +302,7 @@ export class ProductsService {
             );
           }
 
-          if (product.assignedEmail && product.assignedEmail !== 'none') {
+          if (product.assignedEmail && product.assignedEmail !== '') {
             const currentMember = await this.memberService.findByEmail(
               product.assignedEmail,
               session,
@@ -331,12 +334,9 @@ export class ProductsService {
 
           await this.productRepository.findByIdAndDelete(id).session(session);
           // Desasigno un producto de members para enviarlo a products
-        } else if (
-          updateProductDto.assignedEmail === 'none' ||
-          updateProductDto.assignedEmail === ''
-        ) {
+        } else if (updateProductDto.assignedEmail === '') {
           console.log('Desasignar producto:', product);
-          if (product.assignedEmail && product.assignedEmail !== 'none') {
+          if (product.assignedEmail && product.assignedEmail !== '') {
             const currentMember = await this.memberService.findByEmail(
               product.assignedEmail,
               session,
@@ -359,7 +359,7 @@ export class ProductsService {
                 attributes: product.attributes,
                 status: updateProductDto.status || product.status,
                 recoverable: product.recoverable,
-                assignedEmail: 'none',
+                assignedEmail: '',
                 assignedMember: '',
                 lastAssigned: product.assignedMember,
                 acquisitionDate: product.acquisitionDate,
@@ -416,7 +416,6 @@ export class ProductsService {
 
           if (
             updateProductDto.assignedEmail &&
-            updateProductDto.assignedEmail !== 'none' &&
             updateProductDto.assignedEmail !== ''
           ) {
             const newMember = await this.memberService.findByEmail(
@@ -451,10 +450,7 @@ export class ProductsService {
               message: `Product with id "${id}" reassigned successfully`,
             };
             //  desasignar producto de members a products
-          } else if (
-            updateProductDto.assignedEmail === 'none' ||
-            updateProductDto.assignedEmail === ''
-          ) {
+          } else if (updateProductDto.assignedEmail === '') {
             member.products.splice(productIndex, 1);
             await member.save({ session });
 
@@ -463,7 +459,7 @@ export class ProductsService {
                 {
                   ...plainCurrentProduct,
                   lastAssigned: plainCurrentProduct.assignedMember,
-                  assignedEmail: 'none',
+                  assignedEmail: '',
                   assignedMember: '',
                   status: updateProductDto.status || plainCurrentProduct.status,
                   location:
