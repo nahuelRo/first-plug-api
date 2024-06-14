@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 @Module({
   imports: [TenantsModule],
   controllers: [TeamsController],
-  providers: [TeamsService, tenantModels.memberModel, JwtService],
+  providers: [TeamsService, tenantModels.teamModel, JwtService],
 })
 export class TeamsModule {
   configure(consumer: MiddlewareConsumer) {

@@ -1,31 +1,84 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { Member } from '../members/schemas/member.schema';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 
-import { Model } from 'mongoose';
+import { Model, ObjectId } from 'mongoose';
+import { Team } from './schemas/team.schema';
+import { CreateTeamDto } from './dto/create-team.dto';
+import { UpdateTeamDto } from './dto/update-team.dto';
 
+// Mechi:
+/**
+ * EL CREATE YA CONTEMPLA EL UNIQUE
+ * EL UPDATE YA CONTEMPLA EL UNIQUE
+ * FIND ALL
+ * FIND BY ID
+ * Find by name: entiendo que este no va hacer necesario buscar si existe a mano y sino no porque ya lo contempl
+ * el update y el create
+ *
+ * Falta:
+ * Vincular este schema con member y despues guardar los teams dentro de members.
+ * Cuando llames en members usa populate
+ * https://mongoosejs.com/docs/populate.html
+ *
+ * Suerte jajaja
+ */
 @Injectable()
 export class TeamsService {
-  constructor(
-    @Inject('MEMBER_MODEL') private memberRepository: Model<Member>,
-  ) {}
+  constructor(@Inject('TEAM_MODEL') private teamRepository: Model<Team>) {}
+
+  async create(createTeamDto: CreateTeamDto) {
+    try {
+      const team = await this.teamRepository.create(createTeamDto);
+      return await team.save();
+    } catch (error) {
+      this.handleDBExceptions(error);
+    }
+  }
+
+  async update(id: ObjectId, updateTeamDto: UpdateTeamDto) {
+    try {
+      const team = await this.teamRepository.findByIdAndUpdate(
+        id,
+        updateTeamDto,
+        {
+          new: true,
+        },
+      );
+
+      return team;
+    } catch (error) {
+      this.handleDBExceptions(error);
+    }
+  }
 
   async findAll() {
-    const result = await this.memberRepository
-      .aggregate<{ teams: string[] }>([
-        {
-          $match: {
-            team: { $exists: true, $ne: null },
-          },
-        },
-        {
-          $group: {
-            _id: null,
-            teams: { $addToSet: '$team' },
-          },
-        },
-      ])
-      .exec();
+    const teams = this.teamRepository.find();
+    return teams;
+  }
 
-    return result.length > 0 ? result[0].teams : [];
+  async findById(id: ObjectId) {
+    const team = this.teamRepository.findById(id);
+    return team;
+  }
+
+  async findByName(name: string) {
+    const team = this.teamRepository.findOne({ name });
+    return team;
+  }
+
+  private handleDBExceptions(error: any) {
+    if (error.code === 11000) {
+      throw new BadRequestException(
+        'There is already another team with that name',
+      );
+    }
+
+    throw new InternalServerErrorException(
+      'Unexcepted error, check server log',
+    );
   }
 }

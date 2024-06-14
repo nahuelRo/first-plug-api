@@ -6,6 +6,7 @@ import {
   Shipment,
   ShipmentSchema,
 } from '../../shipments/schemas/shipment.schema';
+import { Team, TeamSchema } from 'src/teams/schemas/team.schema';
 
 export const tenantModels = {
   productModel: {
@@ -19,6 +20,13 @@ export const tenantModels = {
     provide: 'MEMBER_MODEL',
     useFactory: async (tenantConnection: Connection) => {
       return tenantConnection.model(Member.name, MemberSchema);
+    },
+    inject: ['TENANT_CONNECTION'],
+  },
+  teamModel: {
+    provide: 'TEAM_MODEL',
+    useFactory: async (tenantConnection: Connection) => {
+      return tenantConnection.model(Team.name, TeamSchema);
     },
     inject: ['TENANT_CONNECTION'],
   },
