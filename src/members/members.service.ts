@@ -13,6 +13,7 @@ import { MemberDocument } from './schemas/member.schema';
 import { CreateMemberArrayDto } from './dto/create-member-array.dto';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { CreateProductDto } from 'src/products/dto';
+import { Team } from 'src/teams/schemas/team.schema';
 
 export interface MemberModel
   extends Model<MemberDocument>,
@@ -20,7 +21,10 @@ export interface MemberModel
 
 @Injectable()
 export class MembersService {
-  constructor(@Inject('MEMBER_MODEL') private memberRepository: MemberModel) {}
+  constructor(
+    @Inject('MEMBER_MODEL') private memberRepository: MemberModel,
+    @Inject('TEAM_MODEL') private teamRepository: Model<Team>,
+  ) {}
 
   async create(createMemberDto: CreateMemberDto) {
     try {
@@ -39,11 +43,11 @@ export class MembersService {
   }
 
   async findAll() {
-    return await this.memberRepository.find();
+    return await this.memberRepository.find().populate('team');
   }
 
   async findById(id: ObjectId) {
-    const member = await this.memberRepository.findById(id);
+    const member = await this.memberRepository.findById(id).populate('team');
 
     if (!member)
       throw new NotFoundException(`Member with id "${id}" not found`);
@@ -197,6 +201,22 @@ export class MembersService {
     } catch (error) {
       console.error('Error while deleting product from member:', error);
       throw error;
+    }
+  }
+
+  async findMembersByTeam(teamId: ObjectId) {
+    try {
+      const members = await this.memberRepository
+        .find({ team: teamId })
+        .populate('team');
+      if (!members || members.length === 0) {
+        throw new NotFoundException(
+          `Members with team id "${teamId}" not found`,
+        );
+      }
+      return members;
+    } catch (error) {
+      this.handleDBExceptions(error);
     }
   }
 

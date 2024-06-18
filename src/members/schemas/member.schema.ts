@@ -62,8 +62,8 @@ export class Member {
   @Prop({ type: [{ type: Product }], default: [] })
   products: Product[];
 
-  @Prop({ type: Array })
-  team?: string;
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Team' })
+  team?: mongoose.Schema.Types.ObjectId;
 }
 
 export const MemberSchema =

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Put } from '@nestjs/common';
 import { TeamsService } from './teams.service';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { ParseMongoIdPipe } from 'src/common/pipes/parse-mongo-id.pipe';
@@ -34,5 +34,28 @@ export class TeamsController {
   ) {
     const teams = await this.teamsService.update(id, updateTeamDto);
     return teams;
+  }
+
+  @Put(':teamId/members/:memberId')
+  async associateTeamToMember(
+    @Param('teamId', ParseMongoIdPipe) teamId: ObjectId,
+    @Param('memberId', ParseMongoIdPipe) memberId: ObjectId,
+  ) {
+    const member = await this.teamsService.associateTeamToMember(
+      teamId,
+      memberId,
+    );
+    return member;
+  }
+  @Put(':teamId/change-member/:memberId')
+  async changeTeamForMember(
+    @Param('teamId', ParseMongoIdPipe) teamId: ObjectId,
+    @Param('memberId', ParseMongoIdPipe) memberId: ObjectId,
+  ) {
+    const member = await this.teamsService.changeTeamForMember(
+      teamId,
+      memberId,
+    );
+    return member;
   }
 }

@@ -9,6 +9,7 @@ import { Model, ObjectId } from 'mongoose';
 import { Team } from './schemas/team.schema';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { UpdateTeamDto } from './dto/update-team.dto';
+import { Member } from '../members/schemas/member.schema';
 
 // Mechi:
 /**
@@ -28,12 +29,43 @@ import { UpdateTeamDto } from './dto/update-team.dto';
  */
 @Injectable()
 export class TeamsService {
-  constructor(@Inject('TEAM_MODEL') private teamRepository: Model<Team>) {}
+  constructor(
+    @Inject('TEAM_MODEL') private teamRepository: Model<Team>,
+    @Inject('MEMBER_MODEL') private memberRepository: Model<Member>,
+  ) {}
 
   async create(createTeamDto: CreateTeamDto) {
     try {
       const team = await this.teamRepository.create(createTeamDto);
       return await team.save();
+    } catch (error) {
+      this.handleDBExceptions(error);
+    }
+  }
+
+  async associateTeamToMember(teamId: ObjectId, memberId: ObjectId) {
+    try {
+      const member = await this.memberRepository.findById(memberId);
+      if (!member) {
+        throw new BadRequestException('Member not found');
+      }
+      member.team = teamId;
+      await member.save();
+      return member;
+    } catch (error) {
+      this.handleDBExceptions(error);
+    }
+  }
+
+  async changeTeamForMember(memberId: ObjectId, newTeamId: ObjectId) {
+    try {
+      const member = await this.memberRepository.findById(memberId);
+      if (!member) {
+        throw new BadRequestException('Member not found');
+      }
+      member.team = newTeamId;
+      await member.save();
+      return member;
     } catch (error) {
       this.handleDBExceptions(error);
     }

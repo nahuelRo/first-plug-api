@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TenantsModule } from './tenants/tenants.module';
@@ -35,11 +35,11 @@ import { SlackModule } from 'nestjs-slack-webhook';
     }),
     TenantsModule,
     ProductsModule,
-    MembersModule,
+    forwardRef(() => MembersModule),
     OrdersModule,
     ShipmentsModule,
     AuthModule,
-    TeamsModule,
+    forwardRef(() => TeamsModule),
   ],
   controllers: [],
   providers: [],
