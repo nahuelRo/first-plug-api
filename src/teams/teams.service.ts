@@ -71,6 +71,25 @@ export class TeamsService {
     }
   }
 
+  async changeTeamForMembers(teamId: ObjectId, memberIds: ObjectId[]) {
+    try {
+      const members = await this.memberRepository.find({
+        _id: { $in: memberIds },
+      });
+
+      if (!members.length) {
+        throw new BadRequestException('Members not found');
+      }
+      for (const member of members) {
+        member.team = teamId;
+        await member.save();
+      }
+      return members;
+    } catch (error) {
+      this.handleDBExceptions(error);
+    }
+  }
+
   async update(id: ObjectId, updateTeamDto: UpdateTeamDto) {
     try {
       const team = await this.teamRepository.findByIdAndUpdate(

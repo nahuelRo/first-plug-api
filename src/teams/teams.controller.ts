@@ -58,4 +58,15 @@ export class TeamsController {
     );
     return member;
   }
+  @Put(':teamId/change-members')
+  async changeTeamForMembers(
+    @Param('teamId', ParseMongoIdPipe) teamId: ObjectId,
+    @Body('membersIds', ParseMongoIdPipe) membersIds: ObjectId[],
+  ) {
+    const members = await this.teamsService.changeTeamForMembers(
+      teamId,
+      membersIds,
+    );
+    return members;
+  }
 }
