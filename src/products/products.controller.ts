@@ -44,6 +44,24 @@ export class ProductsController {
     return this.productsService.tableGrouping();
   }
 
+  @Get('/assign/:id')
+  getProductForAssign(@Param('id', ParseMongoIdPipe) id: ObjectId) {
+    return this.productsService.getProductForAssign(id);
+  }
+
+  @Get('/reassign/:id')
+  getProductForReassign(@Param('id', ParseMongoIdPipe) id: ObjectId) {
+    return this.productsService.getProductForReassign(id);
+  }
+
+  @Patch('/reassign/:id')
+  reassignProduct(
+    @Param('id', ParseMongoIdPipe) id: ObjectId,
+    @Body() updateProductDto: UpdateProductDto,
+  ) {
+    return this.productsService.reassignProduct(id, updateProductDto);
+  }
+
   @Get(':id')
   findById(@Param('id', ParseMongoIdPipe) id: ObjectId) {
     return this.productsService.findById(id);
