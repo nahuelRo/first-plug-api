@@ -273,6 +273,24 @@ export class ProductsService {
     throw new NotFoundException(`Product with id "${id}" not found`);
   }
 
+  private filterMembers(
+    members: MemberDocument[],
+    currentEmail: string | null,
+    includeNone: boolean = false,
+  ) {
+    const filteredMembers = members
+      .filter((member) => member.email !== currentEmail && !member.$isDeleted())
+      .map((member) => ({
+        email: member.email,
+        name: `${member.firstName} ${member.lastName}`,
+        team: member.team,
+      }));
+    if (includeNone) {
+      filteredMembers.push({ email: 'none', name: 'None', team: '' });
+    }
+    return filteredMembers;
+  }
+
   async getProductForReassign(productId: ObjectId) {
     let product: ProductDocument | null =
       await this.productRepository.findById(productId);
@@ -294,16 +312,7 @@ export class ProductsService {
 
     const members = await this.memberService.findAll();
 
-    const options = members
-      .filter(
-        (member) =>
-          member.email !== product!.assignedEmail && !member.$isDeleted(),
-      )
-      .map((member) => ({
-        email: member.email,
-        name: `${member.firstName} ${member.lastName}`,
-        team: member.team,
-      }));
+    const options = this.filterMembers(members, product?.assignedEmail || null);
 
     return { product, options, currentMember };
   }
@@ -319,22 +328,9 @@ export class ProductsService {
     let options;
 
     if (product.assignedEmail === '') {
-      options = members
-        .filter((member) => member.$isDeleted)
-        .map((member) => ({
-          email: member.email,
-          name: `${member.firstName} ${member.lastName}`,
-          team: member.team,
-        }));
+      options = this.filterMembers(members, null);
     } else if (product.assignedEmail !== '' && product.assignedMember === '') {
-      options = members
-        .filter((member) => member.$isDeleted)
-        .map((member) => ({
-          email: member.email,
-          name: `${member.firstName} ${member.lastName}`,
-          team: member.team,
-        }));
-      options.push({ email: 'none', name: 'None', team: '' });
+      options = this.filterMembers(members, null, true);
     }
 
     return { product, options };
