@@ -21,7 +21,6 @@ export class TeamsController {
 
   @Delete('bulk-delete')
   async bulkDelete(@Body() body: { ids: string[] }) {
-    console.log('bulkDelete Body:', body);
     const teamIds = body.ids.map((id) => {
       if (!isValidObjectId(id)) {
         throw new BadRequestException(`Invalid team ID: ${id}`);

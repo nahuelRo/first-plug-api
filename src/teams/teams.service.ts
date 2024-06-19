@@ -56,7 +56,6 @@ export class TeamsService {
       await member.save();
       return member;
     } catch (error) {
-      console.log('Error en associateTeamToMember', error);
       this.handleDBExceptions(error);
     }
   }
@@ -142,14 +141,12 @@ export class TeamsService {
       }
       return result;
     } catch (error) {
-      console.log('Error en delete', error);
       this.handleDBExceptions(error);
     }
   }
 
   async bulkDelete(ids: Types.ObjectId[]) {
     try {
-      console.log('ids:', ids);
       const members = await this.memberRepository.find({ team: { $in: ids } });
       if (members.length > 0) {
         throw new BadRequestException(
@@ -162,7 +159,6 @@ export class TeamsService {
       });
       return result;
     } catch (error) {
-      console.log('Error en bulkDelete', error);
       this.handleDBExceptions(error);
     }
   }
@@ -174,7 +170,6 @@ export class TeamsService {
         'There is already another team with that name',
       );
     }
-
     throw new InternalServerErrorException(
       'Unexcepted error, check server log',
     );
