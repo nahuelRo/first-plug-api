@@ -16,14 +16,14 @@ export class AddFullNameInterceptor implements NestInterceptor {
   }
 
   private addFullName(user: any) {
-    if (user.toObject) {
+    if (user && typeof user.toObject === 'function') {
       user = user.toObject();
     }
 
     if (user && user.firstName && user.lastName) {
       user.fullName = `${user.firstName} ${user.lastName}`;
     }
-    
+
     return user;
   }
 }

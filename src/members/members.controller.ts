@@ -6,14 +6,11 @@ import {
   Patch,
   Param,
   Delete,
-  Res,
-  HttpStatus,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { MembersService } from './members.service';
 import { CreateMemberDto, UpdateMemberDto } from './dto';
-import { Response } from 'express';
 import { ObjectId } from 'mongoose';
 import { ParseMongoIdPipe } from '../common/pipes/parse-mongo-id.pipe';
 import { JwtGuard } from 'src/auth/guard/jwt.guard';
@@ -35,11 +32,8 @@ export class MembersController {
   async bulkcreate(
     @Body()
     createMemberDto: CreateMemberArrayDto,
-    @Res() res: Response,
   ) {
-    const members = await this.membersService.bulkcreate(createMemberDto);
-
-    res.status(HttpStatus.CREATED).json(members);
+    return await this.membersService.bulkcreate(createMemberDto);
   }
 
   // @Post('/assign-many-products')
