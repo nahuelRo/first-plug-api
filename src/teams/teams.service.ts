@@ -5,7 +5,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 
-import { Model, ObjectId } from 'mongoose';
+import { Model, ObjectId, Types } from 'mongoose';
 import { Team } from './schemas/team.schema';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { UpdateTeamDto } from './dto/update-team.dto';
@@ -43,13 +43,31 @@ export class TeamsService {
     }
   }
 
-  async associateTeamToMember(teamId: ObjectId, memberId: ObjectId) {
+  async associateTeamToMember(
+    TeamId: Types.ObjectId,
+    memberId: Types.ObjectId,
+  ) {
     try {
       const member = await this.memberRepository.findById(memberId);
       if (!member) {
         throw new BadRequestException('Member not found');
       }
-      member.team = teamId;
+      member.team = TeamId;
+      await member.save();
+      return member;
+    } catch (error) {
+      console.log('Error en associateTeamToMember', error);
+      this.handleDBExceptions(error);
+    }
+  }
+
+  async changeTeamForMember(memberId: Types.ObjectId, TeamId: Types.ObjectId) {
+    try {
+      const member = await this.memberRepository.findById(memberId);
+      if (!member) {
+        throw new BadRequestException('Member not found');
+      }
+      member.team = TeamId;
       await member.save();
       return member;
     } catch (error) {
@@ -57,21 +75,10 @@ export class TeamsService {
     }
   }
 
-  async changeTeamForMember(memberId: ObjectId, newTeamId: ObjectId) {
-    try {
-      const member = await this.memberRepository.findById(memberId);
-      if (!member) {
-        throw new BadRequestException('Member not found');
-      }
-      member.team = newTeamId;
-      await member.save();
-      return member;
-    } catch (error) {
-      this.handleDBExceptions(error);
-    }
-  }
-
-  async changeTeamForMembers(teamId: ObjectId, memberIds: ObjectId[]) {
+  async changeTeamForMembers(
+    teamId: Types.ObjectId,
+    memberIds: Types.ObjectId[],
+  ) {
     try {
       const members = await this.memberRepository.find({
         _id: { $in: memberIds },
@@ -121,7 +128,47 @@ export class TeamsService {
     return team;
   }
 
+  async delete(id: Types.ObjectId) {
+    try {
+      const members = await this.memberRepository.find({ team: id });
+      if (members.length > 0) {
+        throw new BadRequestException(
+          'Cannot delete team. There are members associated with it',
+        );
+      }
+      const result = await this.teamRepository.findByIdAndDelete(id);
+      if (!result) {
+        throw new BadRequestException('Team not found');
+      }
+      return result;
+    } catch (error) {
+      console.log('Error en delete', error);
+      this.handleDBExceptions(error);
+    }
+  }
+
+  async bulkDelete(ids: Types.ObjectId[]) {
+    try {
+      console.log('ids:', ids);
+      const members = await this.memberRepository.find({ team: { $in: ids } });
+      if (members.length > 0) {
+        throw new BadRequestException(
+          'Cannot delete teams. Some are assigned to members.',
+        );
+      }
+
+      const result = await this.teamRepository.deleteMany({
+        _id: { $in: ids },
+      });
+      return result;
+    } catch (error) {
+      console.log('Error en bulkDelete', error);
+      this.handleDBExceptions(error);
+    }
+  }
+
   private handleDBExceptions(error: any) {
+    console.error('Database exception:', error);
     if (error.code === 11000) {
       throw new BadRequestException(
         'There is already another team with that name',
