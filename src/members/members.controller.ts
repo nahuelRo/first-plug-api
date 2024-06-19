@@ -9,6 +9,7 @@ import {
   Res,
   HttpStatus,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { MembersService } from './members.service';
 import { CreateMemberDto, UpdateMemberDto } from './dto';
@@ -17,9 +18,11 @@ import { ObjectId } from 'mongoose';
 import { ParseMongoIdPipe } from '../common/pipes/parse-mongo-id.pipe';
 import { JwtGuard } from 'src/auth/guard/jwt.guard';
 import { CreateMemberArrayDto } from './dto/create-member-array.dto';
+import { AddFullNameInterceptor } from './interceptors/add-full-name.interceptor';
 
 @Controller('members')
 @UseGuards(JwtGuard)
+@UseInterceptors(AddFullNameInterceptor)
 export class MembersController {
   constructor(private readonly membersService: MembersService) {}
 
