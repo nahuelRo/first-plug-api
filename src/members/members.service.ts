@@ -25,6 +25,13 @@ export class MembersService {
     @Inject('TEAM_MODEL') private teamRepository: Model<Team>,
   ) {}
 
+  private normalizeTeamName(name: string): string {
+    return name
+      .trim()
+      .toLowerCase()
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+
   async create(createMemberDto: CreateMemberDto) {
     try {
       return await this.memberRepository.create(createMemberDto);
@@ -36,8 +43,11 @@ export class MembersService {
   async bulkcreate(createMemberDto: CreateMemberArrayDto) {
     try {
       const teamNames = createMemberDto
-        .map((member) => member.team)
+        .map((member) =>
+          member.team ? this.normalizeTeamName(member.team) : undefined,
+        )
         .filter((team) => team && team.trim() !== '');
+
       const uniqueTeamNames = [...new Set(teamNames)];
 
       const existingTeams = await this.teamRepository.find({
@@ -51,15 +61,20 @@ export class MembersService {
 
       const membersToCreate = await Promise.all(
         createMemberDto.map(async (member) => {
-          if (member.team && member.team.trim() !== '') {
-            if (!teamMap.has(member.team)) {
-              const newTeam = new this.teamRepository({ name: member.team });
-              const savedTeam = await newTeam.save();
-              teamMap.set(savedTeam.name, savedTeam._id);
-            }
-            const teamId = teamMap.get(member.team);
-            if (teamId) {
-              member.team = teamId.toString();
+          if (member.team) {
+            const normalizedTeamName = this.normalizeTeamName(member.team);
+            if (normalizedTeamName && normalizedTeamName.trim() !== '') {
+              if (!teamMap.has(normalizedTeamName)) {
+                const newTeam = new this.teamRepository({
+                  name: normalizedTeamName,
+                });
+                const savedTeam = await newTeam.save();
+                teamMap.set(savedTeam.name, savedTeam._id);
+              }
+              const teamId = teamMap.get(normalizedTeamName);
+              if (teamId) {
+                member.team = teamId.toString();
+              }
             }
           }
           return member;
@@ -73,7 +88,12 @@ export class MembersService {
   }
 
   async findAll() {
-    return await this.memberRepository.find().populate('team');
+    try {
+      const members = await this.memberRepository.find().populate('team');
+      return members;
+    } catch (error) {
+      throw new InternalServerErrorException('Error while fetching members');
+    }
   }
 
   async findById(id: ObjectId) {

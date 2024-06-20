@@ -34,9 +34,28 @@ export class TeamsService {
     @Inject('MEMBER_MODEL') private memberRepository: Model<Member>,
   ) {}
 
+  private normalizeTeamName(name: string): string {
+    return name
+      .trim()
+      .toLowerCase()
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+
   async create(createTeamDto: CreateTeamDto) {
     try {
-      const team = await this.teamRepository.create(createTeamDto);
+      const normalizedTeamName = this.normalizeTeamName(createTeamDto.name);
+      let team = await this.teamRepository.findOne({
+        name: normalizedTeamName,
+      });
+
+      if (team) {
+        return team;
+      }
+
+      team = new this.teamRepository({
+        ...createTeamDto,
+        name: normalizedTeamName,
+      });
       return await team.save();
     } catch (error) {
       this.handleDBExceptions(error);
@@ -98,9 +117,20 @@ export class TeamsService {
 
   async update(id: ObjectId, updateTeamDto: UpdateTeamDto) {
     try {
+      const normalizedTeamName = this.normalizeTeamName(updateTeamDto.name);
+      const existingTeam = await this.teamRepository.findOne({
+        name: normalizedTeamName,
+      });
+
+      if (existingTeam && existingTeam._id.toString() !== id.toString()) {
+        throw new BadRequestException(
+          'There is already another team with that name',
+        );
+      }
+
       const team = await this.teamRepository.findByIdAndUpdate(
         id,
-        updateTeamDto,
+        { ...updateTeamDto, name: normalizedTeamName },
         {
           new: true,
         },
