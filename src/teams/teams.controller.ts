@@ -21,12 +21,15 @@ export class TeamsController {
 
   @Delete('bulk-delete')
   async bulkDelete(@Body() body: { ids: string[] }) {
-    const teamIds = body.ids.map((id) => {
-      if (!isValidObjectId(id)) {
-        throw new BadRequestException(`Invalid team ID: ${id}`);
-      }
-      return new Types.ObjectId(id);
-    });
+    console.log('bulkDelete Body:', body);
+    const teamIds = body.ids
+      .filter((id) => id && isValidObjectId(id))
+      .map((id) => new Types.ObjectId(id));
+
+    if (teamIds.length !== body.ids.length) {
+      throw new BadRequestException('Some provided IDs are invalid');
+    }
+
     return await this.teamsService.bulkDelete(teamIds);
   }
 

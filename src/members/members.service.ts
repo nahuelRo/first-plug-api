@@ -7,9 +7,8 @@ import {
 } from '@nestjs/common';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
-import { ClientSession, Model, ObjectId } from 'mongoose';
+import { ClientSession, Model, ObjectId, Schema } from 'mongoose';
 import { MemberDocument } from './schemas/member.schema';
-
 import { CreateMemberArrayDto } from './dto/create-member-array.dto';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { CreateProductDto } from 'src/products/dto';
@@ -36,7 +35,38 @@ export class MembersService {
 
   async bulkcreate(createMemberDto: CreateMemberArrayDto) {
     try {
-      return await this.memberRepository.insertMany(createMemberDto);
+      const teamNames = createMemberDto
+        .map((member) => member.team)
+        .filter((team) => team && team.trim() !== '');
+      const uniqueTeamNames = [...new Set(teamNames)];
+
+      const existingTeams = await this.teamRepository.find({
+        name: { $in: uniqueTeamNames },
+      });
+      const teamMap = new Map<string, Schema.Types.ObjectId>();
+
+      existingTeams.forEach((team) => {
+        teamMap.set(team.name, team._id);
+      });
+
+      const membersToCreate = await Promise.all(
+        createMemberDto.map(async (member) => {
+          if (member.team && member.team.trim() !== '') {
+            if (!teamMap.has(member.team)) {
+              const newTeam = new this.teamRepository({ name: member.team });
+              const savedTeam = await newTeam.save();
+              teamMap.set(savedTeam.name, savedTeam._id);
+            }
+            const teamId = teamMap.get(member.team);
+            if (teamId) {
+              member.team = teamId.toString();
+            }
+          }
+          return member;
+        }),
+      );
+
+      return await this.memberRepository.insertMany(membersToCreate);
     } catch (error) {
       this.handleDBExceptions(error);
     }
