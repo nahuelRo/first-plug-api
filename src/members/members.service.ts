@@ -102,6 +102,7 @@ export class MembersService {
       const members = await this.memberRepository.find().populate('team');
       return members;
     } catch (error) {
+      console.error('Error while querying the database:', error);
       throw new InternalServerErrorException('Error while fetching members');
     }
   }
