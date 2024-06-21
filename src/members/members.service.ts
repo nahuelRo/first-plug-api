@@ -121,14 +121,17 @@ export class MembersService {
   }
 
   async update(id: ObjectId, updateMemberDto: UpdateMemberDto) {
+    console.log('Update DTO:', updateMemberDto);
     try {
-      return await this.memberRepository.findByIdAndUpdate(
-        id,
-        updateMemberDto,
-        {
-          new: true,
-        },
-      );
+      const member = await this.memberRepository.findById(id);
+      if (!member) {
+        throw new NotFoundException(`Member with id "${id}" not found`);
+      }
+      if (updateMemberDto.products) {
+        member.products = updateMemberDto.products;
+      }
+      Object.assign(member, updateMemberDto);
+      return await member.save();
     } catch (error) {
       this.handleDBExceptions(error);
     }
