@@ -42,6 +42,16 @@ export class MembersService {
 
   async bulkcreate(createMemberDto: CreateMemberArrayDto) {
     try {
+      const emails = createMemberDto.map((member) => member.email);
+      const existingMembers = await this.memberRepository.find({
+        email: { $in: emails },
+      });
+      if (existingMembers.length > 0) {
+        throw new BadRequestException(
+          `Members with emails "${emails.join(', ')}" already exist`,
+        );
+      }
+
       const teamNames = createMemberDto
         .map((member) =>
           member.team ? this.normalizeTeamName(member.team) : undefined,

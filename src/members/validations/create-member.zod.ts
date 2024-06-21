@@ -1,7 +1,9 @@
 import { z } from 'zod';
 import { ProductSchemaZod } from 'src/products/validations/create-product.zod';
 import validator from 'validator';
+
 const phoneRegex = /^\+?[0-9\s]*$/;
+
 export const MemberSchemaZod = z.object({
   firstName: z.string().min(1, { message: 'First name is required' }).trim(),
   lastName: z.string().min(1, { message: 'Last name is required' }).trim(),
