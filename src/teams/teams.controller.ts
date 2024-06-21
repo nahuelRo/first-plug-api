@@ -8,6 +8,7 @@ import {
   Post,
   Put,
   Delete,
+  ParseArrayPipe,
 } from '@nestjs/common';
 import { TeamsService } from './teams.service';
 import { CreateTeamDto } from './dto/create-team.dto';
@@ -20,16 +21,10 @@ export class TeamsController {
   constructor(private readonly teamsService: TeamsService) {}
 
   @Delete('bulk-delete')
-  async bulkDelete(@Body() body: { ids: string[] }) {
-    console.log('bulkDelete Body:', body);
-    const teamIds = body.ids
-      .filter((id) => id && isValidObjectId(id))
-      .map((id) => new Types.ObjectId(id));
-
-    if (teamIds.length !== body.ids.length) {
-      throw new BadRequestException('Some provided IDs are invalid');
-    }
-
+  async bulkDelete(
+    @Body('ids', new ParseArrayPipe({ items: String })) ids: string[],
+  ) {
+    const teamIds = ids.map((id) => new Types.ObjectId(id));
     return await this.teamsService.bulkDelete(teamIds);
   }
 

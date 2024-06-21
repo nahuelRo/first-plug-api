@@ -175,15 +175,16 @@ export class TeamsService {
     }
   }
 
+  async unassignTeamsFromMembers(teamIds: Types.ObjectId[]) {
+    await this.memberRepository.updateMany(
+      { team: { $in: teamIds } },
+      { $set: { team: null } },
+    );
+  }
+
   async bulkDelete(ids: Types.ObjectId[]) {
     try {
-      const members = await this.memberRepository.find({ team: { $in: ids } });
-      if (members.length > 0) {
-        throw new BadRequestException(
-          'Cannot delete teams. Some are assigned to members.',
-        );
-      }
-
+      await this.unassignTeamsFromMembers(ids);
       const result = await this.teamRepository.deleteMany({
         _id: { $in: ids },
       });
