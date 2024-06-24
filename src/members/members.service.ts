@@ -137,10 +137,15 @@ export class MembersService {
       if (!member) {
         throw new NotFoundException(`Member with id "${id}" not found`);
       }
-      if (updateMemberDto.products) {
+
+      if (updateMemberDto.products && updateMemberDto.products.length > 0) {
         member.products = updateMemberDto.products;
+      } else {
+        delete updateMemberDto.products;
       }
+
       Object.assign(member, updateMemberDto);
+
       return await member.save();
     } catch (error) {
       this.handleDBExceptions(error);
