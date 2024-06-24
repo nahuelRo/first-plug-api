@@ -29,7 +29,7 @@ export class AuthService {
     };
 
     return {
-      user,
+      user: payload,
       backendTokens: {
         accessToken: await this.jwtService.signAsync(payload, {
           expiresIn: '48h',
@@ -81,7 +81,7 @@ export class AuthService {
       };
 
       return {
-        user,
+        user: payload,
         backendTokens: {
           accessToken: await this.jwtService.signAsync(payload, {
             expiresIn: '48h',
