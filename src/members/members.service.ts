@@ -132,7 +132,6 @@ export class MembersService {
   }
 
   async update(id: ObjectId, updateMemberDto: UpdateMemberDto) {
-    console.log('Update DTO:', updateMemberDto);
     try {
       const member = await this.memberRepository.findById(id);
       if (!member) {

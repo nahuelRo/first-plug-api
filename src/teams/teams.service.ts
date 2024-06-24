@@ -195,7 +195,6 @@ export class TeamsService {
   }
 
   private handleDBExceptions(error: any) {
-    console.error('Database exception:', error);
     if (error.code === 11000) {
       throw new BadRequestException(
         'There is already another team with that name',
