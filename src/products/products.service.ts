@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { Model, ObjectId } from 'mongoose';
+import { Model, ObjectId, Types } from 'mongoose';
 import { ProductDocument } from './schemas/product.schema';
 import { CreateProductDto, UpdateProductDto } from './dto';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
@@ -286,7 +286,11 @@ export class ProductsService {
         team: member.team,
       }));
     if (includeNone) {
-      filteredMembers.push({ email: 'none', name: 'None', team: '' });
+      filteredMembers.push({
+        email: 'none',
+        name: 'None',
+        team: undefined as Types.ObjectId | undefined,
+      });
     }
     return filteredMembers;
   }

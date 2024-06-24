@@ -66,4 +66,9 @@ export class MembersController {
   remove(@Param('id', ParseMongoIdPipe) id: ObjectId) {
     return this.membersService.softDeleteMember(id);
   }
+
+  @Get('team/:teamId')
+  async findMembersByTeam(@Param('teamId', ParseMongoIdPipe) teamId: ObjectId) {
+    return await this.membersService.findMembersByTeam(teamId);
+  }
 }

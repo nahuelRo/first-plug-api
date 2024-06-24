@@ -7,12 +7,12 @@ import {
 } from '@nestjs/common';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
-import { ClientSession, Model, ObjectId } from 'mongoose';
+import { ClientSession, Model, ObjectId, Schema } from 'mongoose';
 import { MemberDocument } from './schemas/member.schema';
-
 import { CreateMemberArrayDto } from './dto/create-member-array.dto';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { CreateProductDto } from 'src/products/dto';
+import { Team } from 'src/teams/schemas/team.schema';
 
 export interface MemberModel
   extends Model<MemberDocument>,
@@ -20,7 +20,17 @@ export interface MemberModel
 
 @Injectable()
 export class MembersService {
-  constructor(@Inject('MEMBER_MODEL') private memberRepository: MemberModel) {}
+  constructor(
+    @Inject('MEMBER_MODEL') private memberRepository: MemberModel,
+    @Inject('TEAM_MODEL') private teamRepository: Model<Team>,
+  ) {}
+
+  private normalizeTeamName(name: string): string {
+    return name
+      .trim()
+      .toLowerCase()
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  }
 
   async create(createMemberDto: CreateMemberDto) {
     try {
@@ -32,18 +42,73 @@ export class MembersService {
 
   async bulkcreate(createMemberDto: CreateMemberArrayDto) {
     try {
-      return await this.memberRepository.insertMany(createMemberDto);
+      const emails = createMemberDto.map((member) => member.email);
+      const existingMembers = await this.memberRepository.find({
+        email: { $in: emails },
+      });
+      if (existingMembers.length > 0) {
+        throw new BadRequestException(
+          `Members with emails "${emails.join(', ')}" already exist`,
+        );
+      }
+
+      const teamNames = createMemberDto
+        .map((member) =>
+          member.team ? this.normalizeTeamName(member.team) : undefined,
+        )
+        .filter((team) => team && team.trim() !== '');
+
+      const uniqueTeamNames = [...new Set(teamNames)];
+
+      const existingTeams = await this.teamRepository.find({
+        name: { $in: uniqueTeamNames },
+      });
+      const teamMap = new Map<string, Schema.Types.ObjectId>();
+
+      existingTeams.forEach((team) => {
+        teamMap.set(team.name, team._id);
+      });
+
+      const membersToCreate = await Promise.all(
+        createMemberDto.map(async (member) => {
+          if (member.team) {
+            const normalizedTeamName = this.normalizeTeamName(member.team);
+            if (normalizedTeamName && normalizedTeamName.trim() !== '') {
+              if (!teamMap.has(normalizedTeamName)) {
+                const newTeam = new this.teamRepository({
+                  name: normalizedTeamName,
+                });
+                const savedTeam = await newTeam.save();
+                teamMap.set(savedTeam.name, savedTeam._id);
+              }
+              const teamId = teamMap.get(normalizedTeamName);
+              if (teamId) {
+                member.team = teamId.toString();
+              }
+            }
+          }
+          return member;
+        }),
+      );
+
+      return await this.memberRepository.insertMany(membersToCreate);
     } catch (error) {
       this.handleDBExceptions(error);
     }
   }
 
   async findAll() {
-    return await this.memberRepository.find();
+    try {
+      const members = await this.memberRepository.find().populate('team');
+      return members;
+    } catch (error) {
+      console.error('Error while querying the database:', error);
+      throw new InternalServerErrorException('Error while fetching members');
+    }
   }
 
   async findById(id: ObjectId) {
-    const member = await this.memberRepository.findById(id);
+    const member = await this.memberRepository.findById(id).populate('team');
 
     if (!member)
       throw new NotFoundException(`Member with id "${id}" not found`);
@@ -68,13 +133,15 @@ export class MembersService {
 
   async update(id: ObjectId, updateMemberDto: UpdateMemberDto) {
     try {
-      return await this.memberRepository.findByIdAndUpdate(
-        id,
-        updateMemberDto,
-        {
-          new: true,
-        },
-      );
+      const member = await this.memberRepository.findById(id);
+      if (!member) {
+        throw new NotFoundException(`Member with id "${id}" not found`);
+      }
+      if (updateMemberDto.products) {
+        member.products = updateMemberDto.products;
+      }
+      Object.assign(member, updateMemberDto);
+      return await member.save();
     } catch (error) {
       this.handleDBExceptions(error);
     }
@@ -197,6 +264,22 @@ export class MembersService {
     } catch (error) {
       console.error('Error while deleting product from member:', error);
       throw error;
+    }
+  }
+
+  async findMembersByTeam(teamId: ObjectId) {
+    try {
+      const members = await this.memberRepository
+        .find({ team: teamId })
+        .populate('team');
+      if (!members || members.length === 0) {
+        throw new NotFoundException(
+          `Members with team id "${teamId}" not found`,
+        );
+      }
+      return members;
+    } catch (error) {
+      this.handleDBExceptions(error);
     }
   }
 
