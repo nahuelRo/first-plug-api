@@ -1,5 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Request } from 'express';
+import { UserJWT } from 'src/auth/interfaces/auth.interface';
 
 declare namespace NodeJS {
   export interface ProcessEnv {
@@ -12,6 +13,6 @@ declare namespace NodeJS {
 
 declare module 'express' {
   export interface Request {
-    user?: string | jwt.JwtPayload;
+    user?: string | jwt.JwtPayload | UserJWT;
   }
 }

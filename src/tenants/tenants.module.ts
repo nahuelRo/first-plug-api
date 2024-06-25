@@ -3,6 +3,8 @@ import { TenantsService } from './tenants.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Tenant, TenantSchema } from './schemas/tenant.schema';
 import { tenantConnectionProvider } from 'src/common/providers/tenant-connection.provider';
+import { TenantsController } from './tenants.controller';
+import { JwtService } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -13,7 +15,8 @@ import { tenantConnectionProvider } from 'src/common/providers/tenant-connection
       },
     ]),
   ],
-  providers: [TenantsService, tenantConnectionProvider],
+  controllers: [TenantsController],
+  providers: [TenantsService, tenantConnectionProvider, JwtService],
   exports: [TenantsService, tenantConnectionProvider],
 })
 export class TenantsModule {}

@@ -12,7 +12,7 @@ export class Tenant extends Document {
   @Prop({ type: String, required: true })
   email: string;
 
-  @Prop({ type: String })
+  @Prop({ type: String, default: '' })
   image?: string;
 
   @Prop({ type: String, required: false })
@@ -20,6 +20,27 @@ export class Tenant extends Document {
 
   @Prop({ type: String, required: false })
   salt: string;
+
+  @Prop({ type: String, required: false, default: '' })
+  phone: string;
+
+  @Prop({ type: String, required: false, default: '' })
+  country: string;
+
+  @Prop({ type: String, required: false, default: '' })
+  city: string;
+
+  @Prop({ type: String, required: false, default: '' })
+  state: string;
+
+  @Prop({ type: String, required: false, default: '' })
+  zipCode: string;
+
+  @Prop({ type: String, required: false, default: '' })
+  address: string;
+
+  @Prop({ type: String, required: false, default: '' })
+  apartment: string;
 }
 
 export const TenantSchema = SchemaFactory.createForClass(Tenant);
