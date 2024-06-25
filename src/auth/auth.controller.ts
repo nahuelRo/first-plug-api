@@ -54,6 +54,6 @@ export class AuthController {
     @Req() req: Request,
     @Body() changePasswordDto: ChangePasswordDto,
   ) {
-    return await this.authService.changePassword(req.user, changePasswordDto);
+    await this.authService.changePassword(req.user, changePasswordDto);
   }
 }
