@@ -3,8 +3,9 @@ import { LoginDto } from './dto/auth.dto';
 import { TenantsService } from 'src/tenants/tenants.service';
 import { genSalt, hash } from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { ObjectId } from 'mongoose';
 import { CreateTenantByProvidersDto } from 'src/tenants/dto/create-tenant-by-providers.dto';
+import { UserJWT } from './interfaces/auth.interface';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 const EXPIRE_TIME = 20 * 1000;
 
@@ -124,21 +125,30 @@ export class AuthService {
     };
   }
 
-  async changePassword(userId: ObjectId, newPassword: string) {
-    const salt = await genSalt(10);
-    const hashedPassword = await hash(newPassword, salt);
+  async changePassword(user: UserJWT, changePasswordDto: ChangePasswordDto) {
+    const userFound = await this.tenantService.findByEmail(user.email);
 
-    return await this.tenantService.update(userId, {
+    const userPassword = {
+      password: userFound?.password,
+      salt: userFound?.salt,
+    };
+
+    await this.validatePassword(userPassword, changePasswordDto.oldPassword);
+
+    const salt = await genSalt(10);
+    const hashedPassword = await hash(changePasswordDto.newPassword, salt);
+
+    return await this.tenantService.update(user._id, {
       password: hashedPassword,
       salt,
     });
   }
 
   async validatePassword(
-    user: { salt: string; password: string },
+    user: { salt?: string; password?: string },
     password: string,
   ) {
-    const hashedPassword = await hash(password, user.salt);
+    const hashedPassword = await hash(password, user.salt!);
 
     if (user.password !== hashedPassword) {
       throw new UnauthorizedException(

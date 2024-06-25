@@ -6,8 +6,8 @@ import { LoginDto } from './dto/auth.dto';
 import { RefreshJwtGuard } from './guard/refresh.guard';
 import { Request } from 'express';
 import { JwtGuard } from './guard/jwt.guard';
-import { validatePassword } from './interfaces/auth.interface';
 import { CreateTenantByProvidersDto } from 'src/tenants/dto/create-tenant-by-providers.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -52,11 +52,8 @@ export class AuthController {
   @Post('change-password')
   async changePassword(
     @Req() req: Request,
-    @Body() loginDto: validatePassword,
+    @Body() changePasswordDto: ChangePasswordDto,
   ) {
-    return await this.authService.changePassword(
-      req.user._id,
-      loginDto.password,
-    );
+    return await this.authService.changePassword(req.user, changePasswordDto);
   }
 }
