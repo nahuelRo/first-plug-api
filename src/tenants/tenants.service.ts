@@ -6,6 +6,8 @@ import { CreateTenantDto, UpdateTenantDto } from './dto';
 import { CreateTenantByProvidersDto } from './dto/create-tenant-by-providers.dto';
 import { InjectSlack } from 'nestjs-slack-webhook';
 import { IncomingWebhook } from '@slack/webhook';
+import { UpdateTenantInformationSchemaDto } from './dto/update-information.dto';
+import { UserJWT } from 'src/auth/interfaces/auth.interface';
 
 @Injectable()
 export class TenantsService {
@@ -63,5 +65,29 @@ export class TenantsService {
 
   async update(userId: ObjectId, updateTenantDto: UpdateTenantDto) {
     return this.tenantRepository.findByIdAndUpdate(userId, updateTenantDto);
+  }
+
+  async updateInformation(
+    user: UserJWT,
+    updateTenantInformationSchemaDto: UpdateTenantInformationSchemaDto,
+  ) {
+    const userUpdated = await this.tenantRepository.findByIdAndUpdate(
+      user._id,
+      updateTenantInformationSchemaDto,
+      { new: true },
+    );
+
+    const sanitizedUser = {
+      phone: userUpdated?.phone,
+      country: userUpdated?.country,
+      city: userUpdated?.city,
+      state: userUpdated?.state,
+      zipCode: userUpdated?.zipCode,
+      address: userUpdated?.address,
+      apartment: userUpdated?.apartment,
+      image: userUpdated?.image,
+    };
+
+    return sanitizedUser;
   }
 }
