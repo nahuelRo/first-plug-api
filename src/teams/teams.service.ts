@@ -41,6 +41,28 @@ export class TeamsService {
       .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
+  async unassignMemberFromTeam(
+    memberId: Types.ObjectId,
+    teamId: Types.ObjectId,
+  ) {
+    try {
+      const member = await this.memberRepository.findById(memberId);
+      if (!member) {
+        throw new BadRequestException('Member not found');
+      }
+      if (!member.team || member.team.toString() !== teamId.toString()) {
+        throw new BadRequestException(
+          'Member is not assigned to the provided team',
+        );
+      }
+      member.team = undefined;
+      await member.save();
+      return member;
+    } catch (error) {
+      this.handleDBExceptions(error);
+    }
+  }
+
   async create(createTeamDto: CreateTeamDto) {
     try {
       const normalizedTeamName = this.normalizeTeamName(createTeamDto.name);
