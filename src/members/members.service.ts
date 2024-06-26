@@ -138,7 +138,6 @@ export class MembersService {
 
       await session.commitTransaction();
       session.endSession();
-      console.log('Bulk create of members successful');
 
       return createdMembers;
     } catch (error) {

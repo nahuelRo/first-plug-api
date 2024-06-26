@@ -176,7 +176,6 @@ export class TeamsService {
   }
 
   async unassignTeamsFromMembers(teamIds: Types.ObjectId[]) {
-    console.log('Unassigning teams from members:', teamIds); // Log de entrada
     const objectIds = teamIds.map((id) => new Types.ObjectId(id));
     console.log('Converted ObjectIds:', objectIds); // Log de IDs convertidos
 
