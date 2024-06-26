@@ -40,6 +40,14 @@ export class MembersService {
     return {
       ...member,
       email: member.email.toLowerCase(),
+      firstName: member.firstName
+        .trim()
+        .toLowerCase()
+        .replace(/\b\w/g, (char) => char.toUpperCase()),
+      lastName: member.lastName
+        .trim()
+        .toLowerCase()
+        .replace(/\b\w/g, (char) => char.toUpperCase()),
     };
   }
 
@@ -50,11 +58,52 @@ export class MembersService {
     return '';
   }
 
+  private async assignProductsToMemberByEmail(
+    memberEmail: string,
+    memberFullName: string,
+    session: ClientSession,
+  ) {
+    const productsToUpdate = await this.productRepository
+      .find({ assignedEmail: memberEmail })
+      .session(session);
+
+    for (const product of productsToUpdate) {
+      product.assignedMember = memberFullName;
+      await product.save({ session });
+      await this.productRepository
+        .deleteOne({ _id: product._id })
+        .session(session);
+    }
+
+    return productsToUpdate;
+  }
+
   async create(createMemberDto: CreateMemberDto) {
-    const normalizedMember = this.normalizeMemberData(createMemberDto);
+    const session = await this.connection.startSession();
+    session.startTransaction();
+
     try {
-      return await this.memberRepository.create(normalizedMember);
+      const normalizedMember = this.normalizeMemberData(createMemberDto);
+      const createdMember = (
+        await this.memberRepository.create([normalizedMember], { session })
+      )[0];
+
+      const memberFullName = this.getFullName(createdMember);
+      const assignedProducts = await this.assignProductsToMemberByEmail(
+        normalizedMember.email,
+        memberFullName,
+        session,
+      );
+
+      createdMember.products.push(...assignedProducts);
+      await createdMember.save({ session });
+
+      await session.commitTransaction();
+      session.endSession();
+      return createdMember;
     } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
       this.handleDBExceptions(error);
     }
   }
