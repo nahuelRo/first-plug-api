@@ -7,12 +7,14 @@ import {
 } from '@nestjs/common';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
-import { ClientSession, Model, ObjectId, Schema } from 'mongoose';
+import { ClientSession, Connection, Model, ObjectId, Schema } from 'mongoose';
 import { MemberDocument } from './schemas/member.schema';
-import { CreateMemberArrayDto } from './dto/create-member-array.dto';
+// import { CreateMemberArrayDto } from './dto/create-member-array.dto';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { CreateProductDto } from 'src/products/dto';
 import { Team } from 'src/teams/schemas/team.schema';
+import { ProductModel } from 'src/products/products.service';
+import { InjectConnection } from '@nestjs/mongoose';
 
 export interface MemberModel
   extends Model<MemberDocument>,
@@ -22,7 +24,9 @@ export interface MemberModel
 export class MembersService {
   constructor(
     @Inject('MEMBER_MODEL') private memberRepository: MemberModel,
+    @Inject('PRODUCT_MODEL') private productRepository: ProductModel,
     @Inject('TEAM_MODEL') private teamRepository: Model<Team>,
+    @InjectConnection() private readonly connection: Connection,
   ) {}
 
   private normalizeTeamName(name: string): string {
@@ -32,27 +36,48 @@ export class MembersService {
       .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
+  private normalizeMemberData(member: CreateMemberDto) {
+    return {
+      ...member,
+      email: member.email.toLowerCase(),
+    };
+  }
+
+  private getFullName(member: any): string {
+    if (member && member.firstName && member.lastName) {
+      return `${member.firstName} ${member.lastName}`;
+    }
+    return '';
+  }
+
   async create(createMemberDto: CreateMemberDto) {
+    const normalizedMember = this.normalizeMemberData(createMemberDto);
     try {
-      return await this.memberRepository.create(createMemberDto);
+      return await this.memberRepository.create(normalizedMember);
     } catch (error) {
       this.handleDBExceptions(error);
     }
   }
 
-  async bulkcreate(createMemberDto: CreateMemberArrayDto) {
+  async bulkCreate(createMemberDtos: CreateMemberDto[]) {
+    const session = await this.connection.startSession();
+    session.startTransaction();
+
     try {
-      const emails = createMemberDto.map((member) => member.email);
+      const normalizedMembers = createMemberDtos.map(this.normalizeMemberData);
+
+      const emails = normalizedMembers.map((member) => member.email);
+
       const existingMembers = await this.memberRepository.find({
         email: { $in: emails },
       });
       if (existingMembers.length > 0) {
         throw new BadRequestException(
-          `Members with emails "${emails.join(', ')}" already exist`,
+          `Members with emails "${existingMembers.map((member) => member.email).join(', ')}" already exist`,
         );
       }
 
-      const teamNames = createMemberDto
+      const teamNames = normalizedMembers
         .map((member) =>
           member.team ? this.normalizeTeamName(member.team) : undefined,
         )
@@ -70,7 +95,7 @@ export class MembersService {
       });
 
       const membersToCreate = await Promise.all(
-        createMemberDto.map(async (member) => {
+        normalizedMembers.map(async (member) => {
           if (member.team) {
             const normalizedTeamName = this.normalizeTeamName(member.team);
             if (normalizedTeamName && normalizedTeamName.trim() !== '') {
@@ -91,9 +116,40 @@ export class MembersService {
         }),
       );
 
-      return await this.memberRepository.insertMany(membersToCreate);
+      const createdMembers = await this.memberRepository.insertMany(
+        membersToCreate,
+        { session },
+      );
+
+      for (const member of createdMembers) {
+        const fullName = this.getFullName(member);
+        const productsToUpdate = await this.productRepository.find({
+          assignedEmail: member.email,
+        });
+
+        for (const product of productsToUpdate) {
+          product.assignedMember = fullName;
+          await product.save({ session });
+        }
+
+        member.products.push(...productsToUpdate);
+        await member.save({ session });
+      }
+
+      await session.commitTransaction();
+      session.endSession();
+      console.log('Bulk create of members successful');
+
+      return createdMembers;
     } catch (error) {
-      this.handleDBExceptions(error);
+      await session.abortTransaction();
+      session.endSession();
+      console.error('Bulk create of members error:', error);
+      if (error instanceof BadRequestException) {
+        throw new BadRequestException('Error creating members');
+      } else {
+        throw new InternalServerErrorException();
+      }
     }
   }
 
