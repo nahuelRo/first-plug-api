@@ -34,7 +34,7 @@ export class ProductsController {
     @Body() createProductDto: CreateProductArrayDto,
     @Res() res: Response,
   ) {
-    const products = await this.productsService.bulkcreate(createProductDto);
+    const products = await this.productsService.bulkCreate(createProductDto);
 
     res.status(HttpStatus.CREATED).json(products);
   }

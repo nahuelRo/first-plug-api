@@ -6,9 +6,14 @@ import { TenantsMiddleware } from '../common/middlewares/tenants.middleware';
 import { tenantModels } from '../common/providers/tenant-models-provider';
 import { JwtService } from '@nestjs/jwt';
 import { TeamsModule } from 'src/teams/teams.module';
+import { ProductsModule } from 'src/products/products.module';
 
 @Module({
-  imports: [TenantsModule, forwardRef(() => TeamsModule)],
+  imports: [
+    TenantsModule,
+    forwardRef(() => TeamsModule),
+    forwardRef(() => ProductsModule),
+  ],
   controllers: [MembersController],
   providers: [MembersService, tenantModels.memberModel, JwtService],
   exports: [MembersService, tenantModels.memberModel],

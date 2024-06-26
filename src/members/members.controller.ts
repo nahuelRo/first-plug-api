@@ -33,7 +33,7 @@ export class MembersController {
     @Body()
     createMemberDto: CreateMemberArrayDto,
   ) {
-    return await this.membersService.bulkcreate(createMemberDto);
+    return await this.membersService.bulkCreate(createMemberDto);
   }
 
   // @Post('/assign-many-products')

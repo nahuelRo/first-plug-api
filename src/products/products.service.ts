@@ -28,6 +28,26 @@ export class ProductsService {
     @InjectConnection() private readonly connection: Connection,
   ) {}
 
+  private normalizeProductData(product: CreateProductDto) {
+    return {
+      ...product,
+      name: product.name
+        ?.trim()
+        .toLowerCase()
+        .replace(/\b\w/g, (char) => char.toUpperCase()),
+      assignedEmail: product.assignedEmail
+        ? product.assignedEmail.toLowerCase()
+        : undefined,
+    };
+  }
+
+  private getFullName(member: any): string {
+    if (member && member.firstName && member.lastName) {
+      return `${member.firstName} ${member.lastName}`;
+    }
+    return '';
+  }
+
   private async validateSerialNumber(serialNumber: string) {
     if (!serialNumber || serialNumber.trim() === '') {
       return;
@@ -45,7 +65,8 @@ export class ProductsService {
   }
 
   async create(createProductDto: CreateProductDto) {
-    const { assignedEmail, serialNumber, ...rest } = createProductDto;
+    const normalizedProduct = this.normalizeProductData(createProductDto);
+    const { assignedEmail, serialNumber, ...rest } = normalizedProduct;
 
     if (serialNumber && serialNumber.trim() !== '') {
       await this.validateSerialNumber(serialNumber);
@@ -73,9 +94,16 @@ export class ProductsService {
     });
   }
 
-  async bulkcreate(createProductDto: CreateProductDto[]) {
+  async bulkCreate(createProductDtos: CreateProductDto[]) {
+    const session = await this.connection.startSession();
+    session.startTransaction();
+
     try {
-      const productsWithSerialNumbers = createProductDto.filter(
+      const normalizedProducts = createProductDtos.map(
+        this.normalizeProductData,
+      );
+
+      const productsWithSerialNumbers = normalizedProducts.filter(
         (product) => product.serialNumber,
       );
       const seenSerialNumbers = new Set<string>();
@@ -95,7 +123,7 @@ export class ProductsService {
         throw new BadRequestException(`Serial Number already exists`);
       }
 
-      for (const product of createProductDto) {
+      for (const product of normalizedProducts) {
         const { serialNumber } = product;
 
         if (serialNumber && serialNumber.trim() !== '') {
@@ -103,32 +131,76 @@ export class ProductsService {
         }
       }
 
-      const createData = createProductDto.map((product) => {
+      const createData = normalizedProducts.map((product) => {
         const { serialNumber, ...rest } = product;
-
         return serialNumber && serialNumber.trim() !== ''
           ? { ...rest, serialNumber }
           : rest;
       });
 
-      const productsWithoutAssignedEmail = createData.filter(
+      const productsWithIds = createData.map((product) => {
+        return {
+          ...product,
+          _id: new Types.ObjectId(),
+        };
+      });
+
+      const productsWithoutAssignedEmail = productsWithIds.filter(
         (product) => !product.assignedEmail,
       );
 
-      const productsWithAssignedEmail = createData.filter(
+      const productsWithAssignedEmail = productsWithIds.filter(
         (product) => product.assignedEmail,
       );
 
-      const createPromises = productsWithAssignedEmail.map((product) =>
-        this.create(product),
+      const createdProducts: ProductDocument[] = [];
+
+      const assignProductPromises = productsWithAssignedEmail.map(
+        async (product) => {
+          if (product.assignedEmail) {
+            const member = await this.memberService.findByEmailNotThrowError(
+              product.assignedEmail,
+            );
+
+            if (member) {
+              const productDocument = new this.productRepository(
+                product,
+              ) as ProductDocument;
+              productDocument.assignedMember = this.getFullName(member);
+              member.products.push(productDocument);
+              await member.save({ session });
+              await this.productRepository
+                .deleteOne({ _id: product._id })
+                .session(session);
+              createdProducts.push(productDocument);
+            } else {
+              const createdProduct = await this.productRepository.create(
+                [product],
+                { session },
+              );
+              createdProducts.push(...createdProduct);
+            }
+          }
+        },
       );
 
       const insertManyPromise = this.productRepository.insertMany(
         productsWithoutAssignedEmail,
+        { session },
       );
 
-      return await Promise.all([...createPromises, insertManyPromise]);
+      const createdProductsWithoutAssignedEmail = await insertManyPromise;
+      createdProducts.push(...createdProductsWithoutAssignedEmail);
+
+      await Promise.all(assignProductPromises);
+
+      await session.commitTransaction();
+      session.endSession();
+
+      return createdProducts;
     } catch (error) {
+      await session.abortTransaction();
+      session.endSession();
       if (error instanceof BadRequestException) {
         throw new BadRequestException(`Serial Number already exists`);
       } else {

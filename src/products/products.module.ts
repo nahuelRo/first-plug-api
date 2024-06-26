@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, forwardRef } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { ProductsController } from './products.controller';
 import { tenantModels } from '../common/providers/tenant-models-provider';
@@ -8,10 +8,10 @@ import { JwtService } from '@nestjs/jwt';
 import { MembersModule } from 'src/members/members.module';
 
 @Module({
-  imports: [TenantsModule, MembersModule],
+  imports: [TenantsModule, MembersModule, forwardRef(() => MembersModule)],
   controllers: [ProductsController],
   providers: [ProductsService, tenantModels.productModel, JwtService],
-  exports: [ProductsService],
+  exports: [ProductsService, tenantModels.productModel],
 })
 export class ProductsModule {
   configure(consumer: MiddlewareConsumer) {

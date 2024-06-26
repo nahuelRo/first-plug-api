@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { Document } from 'mongoose';
 
-@Schema()
+@Schema({ timestamps: true })
 export class Team extends Document {
   _id: mongoose.Schema.Types.ObjectId;
 
