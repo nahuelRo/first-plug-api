@@ -177,30 +177,27 @@ export class TeamsService {
 
   async unassignTeamsFromMembers(teamIds: Types.ObjectId[]) {
     const objectIds = teamIds.map((id) => new Types.ObjectId(id));
-    console.log('Converted ObjectIds:', objectIds); // Log de IDs convertidos
 
     try {
       const result = await this.memberRepository.updateMany(
         { team: { $in: objectIds } },
-        { $set: { team: null } },
+        { $set: { team: '' } },
         { multi: true },
       );
-      console.log('Unassign result:', result); // Log del resultado de la actualización
+      return result;
     } catch (error) {
-      console.error('Error during unassigning teams from members:', error); // Log de error
+      throw new InternalServerErrorException(
+        'Unexpected error during unassigning teams from members',
+      );
     }
   }
 
   async bulkDelete(ids: Types.ObjectId[]) {
-    console.log('Bulk delete ids:', ids);
-
     try {
       await this.unassignTeamsFromMembers(ids);
       const result = await this.teamRepository.deleteMany({
         _id: { $in: ids.map((id) => new Types.ObjectId(id)) },
       });
-
-      console.log('Delete result:', result);
       return result;
     } catch (error) {
       this.handleDBExceptions(error);
