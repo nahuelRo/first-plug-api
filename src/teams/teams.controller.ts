@@ -84,6 +84,10 @@ export class TeamsController {
     @Param('teamId', ParseMongoIdPipe) teamId: Types.ObjectId,
     @Body('membersIds') membersIds: string[],
   ) {
+    if (!membersIds) {
+      throw new BadRequestException('No member IDs provided');
+    }
+
     const memberIds = membersIds.map((id) => {
       if (!isValidObjectId(id)) {
         throw new BadRequestException(`Invalid member ID: ${id}`);
@@ -92,6 +96,18 @@ export class TeamsController {
     });
 
     return await this.teamsService.changeTeamForMembers(teamId, memberIds);
+  }
+
+  @Put(':memberId/unassign-member')
+  async unassignMemberFromTeam(
+    @Param('memberId', ParseMongoIdPipe) memberId: Types.ObjectId,
+    @Body('teamId') teamId: Types.ObjectId,
+  ) {
+    const member = await this.teamsService.unassignMemberFromTeam(
+      memberId,
+      teamId,
+    );
+    return member;
   }
 
   @Delete(':id')
