@@ -231,8 +231,26 @@ export class MembersService {
     return member;
   }
 
-  async findByEmailNotThrowError(email: string) {
-    return await this.memberRepository.findOne({ email: email });
+  async findByEmailNotThrowError(
+    email: string,
+  ): Promise<MemberDocument | null> {
+    try {
+      const member = await this.memberRepository.findOne({ email }).exec();
+      if (member) {
+        return member;
+      }
+
+      const product = await this.productRepository
+        .findOne({ assignedEmail: email })
+        .exec();
+      if (product) {
+        return null;
+      }
+
+      return null;
+    } catch (error) {
+      return null;
+    }
   }
 
   async update(id: ObjectId, updateMemberDto: UpdateMemberDto) {
