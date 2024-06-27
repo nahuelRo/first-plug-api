@@ -179,6 +179,9 @@ export class MembersService {
         for (const product of productsToUpdate) {
           product.assignedMember = fullName;
           await product.save({ session });
+          await this.productRepository
+            .deleteOne({ _id: product._id })
+            .session(session);
         }
 
         member.products.push(...productsToUpdate);
