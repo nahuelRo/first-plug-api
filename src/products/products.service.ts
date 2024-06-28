@@ -441,9 +441,6 @@ export class ProductsService {
     product: ProductDocument,
     updateProductDto: UpdateProductDto,
   ) {
-    console.log('handleUnknownEmailToMemberUpdate - Start');
-    console.log(`Product ID: ${product._id}`);
-
     const newMember = await this.memberService.findByEmailNotThrowError(
       updateProductDto.assignedEmail!,
     );
@@ -461,8 +458,6 @@ export class ProductsService {
       updateProductDto,
       product.assignedEmail || '',
     );
-
-    console.log('handleUnknownEmailToMemberUpdate - End');
   }
 
   // Método específico para manejar actualizaciones de emails desconocidos
@@ -471,9 +466,6 @@ export class ProductsService {
     product: ProductDocument,
     updateProductDto: UpdateProductDto,
   ) {
-    console.log('handleUnknownEmailUpdate - Start');
-    console.log(`Product ID: ${product._id}`);
-
     const updatedFields = this.getUpdatedFields(product, updateProductDto);
 
     if (updatedFields.assignedEmail === '') {
@@ -485,8 +477,6 @@ export class ProductsService {
       { $set: updatedFields },
       { session, runValidators: true, new: true, omitUndefined: true },
     );
-
-    console.log('handleUnknownEmailUpdate - End');
   }
 
   // Método para eliminar un producto de un miembro
@@ -504,7 +494,6 @@ export class ProductsService {
       if (productIndex !== -1) {
         member.products.splice(productIndex, 1);
         await member.save({ session });
-        console.log('Product removed from previous member');
       }
     }
   }
@@ -517,10 +506,6 @@ export class ProductsService {
     updateProductDto: UpdateProductDto,
     lastAssigned: string,
   ) {
-    console.log('moveToMemberCollection - Start');
-    console.log(`Product ID: ${product._id}`);
-    console.log(`New Member ID: ${newMember._id}`);
-
     // Eliminar el producto del miembro anterior
     if (product.assignedEmail) {
       await this.removeProductFromMember(
@@ -547,13 +532,10 @@ export class ProductsService {
 
     newMember.products.push(updateData);
     await newMember.save({ session });
-    console.log('Product added to member collection');
 
     await this.productRepository
       .findByIdAndDelete(product._id)
       .session(session);
-    console.log('Product deleted from products collection');
-    console.log('moveToMemberCollection - End');
   }
 
   // Función para mover un producto de un miembro a la colección de productos
@@ -563,17 +545,12 @@ export class ProductsService {
     member: MemberDocument,
     updateProductDto: UpdateProductDto,
   ) {
-    console.log('moveToProductsCollection - Start');
-    console.log(`Product ID: ${product._id}`);
-    console.log(`Member ID: ${member._id}`);
-
     const productIndex = member.products.findIndex(
       (prod) => prod._id!.toString() === product._id!.toString(),
     );
     if (productIndex !== -1) {
       member.products.splice(productIndex, 1);
       await member.save({ session });
-      console.log('Product removed from current member');
     } else {
       throw new Error('Product not found in member collection');
     }
@@ -594,8 +571,6 @@ export class ProductsService {
     };
 
     await this.productRepository.create([updateData], { session });
-    console.log('Product added to products collection');
-    console.log('moveToProductsCollection - End');
   }
 
   // Método para actualizar los atributos del producto
@@ -606,10 +581,6 @@ export class ProductsService {
     currentLocation: 'products' | 'members',
     member?: MemberDocument,
   ) {
-    console.log('updateProductAttributes - Start');
-    console.log(`Current Location: ${currentLocation}`);
-    console.log(`Product ID: ${product._id}`);
-
     const updatedFields = this.getUpdatedFields(product, updateProductDto);
 
     if (
@@ -627,7 +598,6 @@ export class ProductsService {
         { $set: updatedFields },
         { session, runValidators: true, new: true, omitUndefined: true },
       );
-      console.log('Product updated in products collection');
     } else if (currentLocation === 'members' && member) {
       const productIndex = member.products.findIndex(
         (prod) => prod._id!.toString() === product._id!.toString(),
@@ -635,11 +605,8 @@ export class ProductsService {
       if (productIndex !== -1) {
         Object.assign(member.products[productIndex], updatedFields);
         await member.save({ session });
-        console.log('Product updated in members collection');
       }
     }
-
-    console.log('updateProductAttributes - End');
   }
 
   async update(id: ObjectId, updateProductDto: UpdateProductDto) {
