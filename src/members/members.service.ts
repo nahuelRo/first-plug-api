@@ -9,7 +9,6 @@ import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberDto } from './dto/update-member.dto';
 import { ClientSession, Connection, Model, ObjectId, Schema } from 'mongoose';
 import { MemberDocument } from './schemas/member.schema';
-// import { CreateMemberArrayDto } from './dto/create-member-array.dto';
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { CreateProductDto } from 'src/products/dto';
 import { Team } from 'src/teams/schemas/team.schema';
@@ -143,27 +142,29 @@ export class MembersService {
         teamMap.set(team.name, team._id);
       });
 
-      const membersToCreate = await Promise.all(
-        normalizedMembers.map(async (member) => {
-          if (member.team) {
-            const normalizedTeamName = this.normalizeTeamName(member.team);
-            if (normalizedTeamName && normalizedTeamName.trim() !== '') {
-              if (!teamMap.has(normalizedTeamName)) {
-                const newTeam = new this.teamRepository({
-                  name: normalizedTeamName,
-                });
-                const savedTeam = await newTeam.save();
-                teamMap.set(savedTeam.name, savedTeam._id);
-              }
-              const teamId = teamMap.get(normalizedTeamName);
-              if (teamId) {
-                member.team = teamId.toString();
-              }
-            }
-          }
-          return member;
-        }),
+      const teamsToCreate = uniqueTeamNames.filter(
+        (teamName) => teamName !== undefined && !teamMap.has(teamName),
       );
+
+      const newTeams = await this.teamRepository.insertMany(
+        teamsToCreate.map((teamName) => ({ name: teamName })),
+        { session },
+      );
+
+      newTeams.forEach((team) => {
+        teamMap.set(team.name, team._id);
+      });
+
+      const membersToCreate = normalizedMembers.map((member) => {
+        if (member.team) {
+          const normalizedTeamName = this.normalizeTeamName(member.team);
+          const teamId = teamMap.get(normalizedTeamName);
+          if (teamId) {
+            member.team = teamId.toString();
+          }
+        }
+        return member;
+      });
 
       const createdMembers = await this.memberRepository.insertMany(
         membersToCreate,
