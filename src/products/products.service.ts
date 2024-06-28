@@ -439,26 +439,28 @@ export class ProductsService {
     } else {
       throw new Error('Member ID or Product ID is undefined');
     }
-    await this.productRepository.create(
-      [
-        {
-          _id: product._id,
-          name: product.name,
-          category: product.category,
-          attributes: product.attributes,
-          status: updateProductDto.status || product.status,
-          recoverable: product.recoverable,
-          assignedEmail: '',
-          assignedMember: '',
-          lastAssigned: product.assignedMember,
-          acquisitionDate: product.acquisitionDate,
-          location: updateProductDto.location || product.location,
-          isDeleted: product.isDeleted,
-        },
-      ],
-      { session },
-    );
+
+    const newProductData = {
+      _id: product._id,
+      name: product.name,
+      category: product.category,
+      attributes: product.attributes,
+      status: updateProductDto.status || product.status,
+      recoverable: product.recoverable,
+      assignedEmail: '',
+      assignedMember: '',
+      lastAssigned: product.assignedMember,
+      acquisitionDate: product.acquisitionDate,
+      location: updateProductDto.location || product.location,
+      isDeleted: product.isDeleted,
+    };
+
+    console.log('Creating new product in products collection', newProductData);
+
+    await this.productRepository.create([newProductData], { session });
+
     console.log('Product added to products collection');
+    console.log('moveToProductsCollection - End');
   }
 
   // Nueva función: eliminar producto del miembro actual
@@ -588,6 +590,7 @@ export class ProductsService {
         }
       }
     }
+    console.log('updateProduct - End');
   }
 
   async update(id: ObjectId, updateProductDto: UpdateProductDto) {
@@ -595,9 +598,6 @@ export class ProductsService {
     session.startTransaction();
 
     try {
-      console.log('update - Start');
-      console.log(`Product ID: ${id}`);
-
       const product = await this.productRepository
         .findById(id)
         .session(session);
@@ -629,7 +629,6 @@ export class ProductsService {
       await session.commitTransaction();
       session.endSession();
 
-      console.log('update - End');
       return { message: `Product with id "${id}" updated successfully` };
     } catch (error) {
       await session.abortTransaction();
