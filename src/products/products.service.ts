@@ -419,226 +419,220 @@ export class ProductsService {
     return this.update(id, updateProductDto);
   }
 
+  private async moveToProductsCollection(
+    session: any,
+    product: ProductDocument,
+    member: MemberDocument,
+    updateProductDto: UpdateProductDto,
+  ) {
+    console.log('moveToProductsCollection - Start');
+    console.log(`Product ID: ${product._id}`);
+    console.log(`Member ID: ${member._id}`);
+
+    if (member._id && product._id) {
+      await this.memberService.deleteProductFromMember(
+        member._id,
+        product._id,
+        session,
+      );
+      console.log('Product removed from current member');
+    } else {
+      throw new Error('Member ID or Product ID is undefined');
+    }
+    await this.productRepository.create(
+      [
+        {
+          _id: product._id,
+          name: product.name,
+          category: product.category,
+          attributes: product.attributes,
+          status: updateProductDto.status || product.status,
+          recoverable: product.recoverable,
+          assignedEmail: '',
+          assignedMember: '',
+          lastAssigned: product.assignedMember,
+          acquisitionDate: product.acquisitionDate,
+          location: updateProductDto.location || product.location,
+          isDeleted: product.isDeleted,
+        },
+      ],
+      { session },
+    );
+    console.log('Product added to products collection');
+  }
+
+  // Nueva función: eliminar producto del miembro actual
+  private async removeProductFromCurrentMember(
+    session: any,
+    product: ProductDocument,
+  ) {
+    if (product.assignedEmail && product.assignedEmail !== '') {
+      const currentMember = await this.memberService.findByEmail(
+        product.assignedEmail,
+        session,
+      );
+      if (currentMember) {
+        currentMember.products = currentMember.products.filter(
+          (prod) => prod._id?.toString() !== product._id!.toString(),
+        );
+        await currentMember.save({ session });
+      }
+    }
+  }
+
+  private async updateProduct(
+    session: any,
+    product: ProductDocument,
+    updateProductDto: UpdateProductDto,
+    currentLocation: 'products' | 'members',
+    member?: MemberDocument,
+  ) {
+    const normalizedUpdateProductDto =
+      this.normalizeProductData(updateProductDto);
+
+    console.log('updateProduct - Start');
+    console.log(`Current Location: ${currentLocation}`);
+    console.log(`Product ID: ${product._id}`);
+
+    if (
+      !normalizedUpdateProductDto.assignedEmail ||
+      normalizedUpdateProductDto.assignedEmail === product.assignedEmail
+    ) {
+      console.log('Updating product in the same collection');
+      if (currentLocation === 'products') {
+        await this.productRepository.updateOne(
+          { _id: product._id },
+          { $set: normalizedUpdateProductDto },
+          { session, runValidators: true, new: true, omitUndefined: true },
+        );
+        console.log('Product updated in products collection');
+      } else if (currentLocation === 'members' && member) {
+        const productIndex = member.products.findIndex(
+          (prod) => prod._id!.toString() === product._id!.toString(),
+        );
+        if (productIndex !== -1) {
+          Object.assign(
+            member.products[productIndex],
+            normalizedUpdateProductDto,
+          );
+          await member.save({ session });
+          console.log('Product updated in members collection');
+        }
+      }
+    } else {
+      console.log('Moving product to a different collection');
+      if (
+        normalizedUpdateProductDto.assignedEmail &&
+        normalizedUpdateProductDto.assignedEmail !== 'none'
+      ) {
+        const newMember = await this.memberService.findByEmail(
+          normalizedUpdateProductDto.assignedEmail,
+          session,
+        );
+        if (!newMember) {
+          throw new NotFoundException(
+            `Member with email "${normalizedUpdateProductDto.assignedEmail}" not found`,
+          );
+        }
+
+        await this.removeProductFromCurrentMember(session, product);
+        console.log('Product removed from current member');
+
+        newMember.products.push({
+          _id: product._id,
+          name: product.name,
+          category: product.category,
+          attributes: product.attributes,
+          status: normalizedUpdateProductDto.status || product.status,
+          recoverable: product.recoverable,
+          assignedEmail: normalizedUpdateProductDto.assignedEmail,
+          assignedMember: normalizedUpdateProductDto.assignedMember,
+          acquisitionDate: product.acquisitionDate,
+          location: normalizedUpdateProductDto.location || product.location,
+          isDeleted: product.isDeleted,
+          lastAssigned: product.assignedMember,
+        });
+        await newMember.save({ session });
+
+        if (currentLocation === 'products') {
+          await this.productRepository
+            .findByIdAndDelete(product._id)
+            .session(session);
+          console.log('Product deleted from products collection');
+        }
+      } else if (normalizedUpdateProductDto.assignedEmail === '') {
+        console.log('Moving product from members to products collection');
+        if (currentLocation === 'members' && member) {
+          await this.moveToProductsCollection(
+            session,
+            product,
+            member,
+            normalizedUpdateProductDto,
+          );
+        } else {
+          await this.productRepository.updateOne(
+            { _id: product._id },
+            {
+              $set: {
+                ...normalizedUpdateProductDto,
+                assignedEmail: '',
+                assignedMember: '',
+                lastAssigned: product.assignedMember,
+              },
+            },
+            { session, runValidators: true, new: true, omitUndefined: true },
+          );
+          console.log(
+            'Product updated in products collection with unassigned status',
+          );
+        }
+      }
+    }
+  }
+
   async update(id: ObjectId, updateProductDto: UpdateProductDto) {
     const session = await this.connection.startSession();
     session.startTransaction();
 
     try {
+      console.log('update - Start');
+      console.log(`Product ID: ${id}`);
+
       const product = await this.productRepository
         .findById(id)
         .session(session);
-
       if (product) {
-        if (updateProductDto.assignedEmail === 'none') {
-          updateProductDto.assignedEmail = '';
-        }
-
-        // Asigno un producto de Products a un miembro de Members
-        if (
-          updateProductDto.assignedEmail &&
-          updateProductDto.assignedEmail !== ''
-        ) {
-          const newMember = await this.memberService.findByEmail(
-            updateProductDto.assignedEmail,
-            session,
-          );
-
-          if (!newMember) {
-            throw new NotFoundException(
-              `Member with email "${updateProductDto.assignedEmail}" not found`,
-            );
-          }
-
-          if (product.assignedEmail && product.assignedEmail !== '') {
-            const currentMember = await this.memberService.findByEmail(
-              product.assignedEmail,
-              session,
-            );
-
-            if (currentMember) {
-              currentMember.products = currentMember.products.filter(
-                (prod) => prod._id?.toString() !== id.toString(),
-              );
-              await currentMember.save({ session });
-            }
-          }
-
-          newMember.products.push({
-            _id: product._id,
-            name: product.name,
-            category: product.category,
-            attributes: product.attributes,
-            status: updateProductDto.status || product.status,
-            recoverable: product.recoverable,
-            assignedEmail: updateProductDto.assignedEmail,
-            assignedMember: updateProductDto.assignedMember,
-            acquisitionDate: product.acquisitionDate,
-            location: updateProductDto.location || product.location,
-            isDeleted: product.isDeleted,
-            lastAssigned: product.assignedMember,
-          });
-          await newMember.save({ session });
-
-          await this.productRepository.findByIdAndDelete(id).session(session);
-          // Desasigno un producto de members para enviarlo a products
-        } else if (updateProductDto.assignedEmail === '') {
-          if (product.assignedEmail && product.assignedEmail !== '') {
-            const currentMember = await this.memberService.findByEmail(
-              product.assignedEmail,
-              session,
-            );
-
-            if (currentMember) {
-              currentMember.products = currentMember.products.filter(
-                (prod) => prod._id?.toString() !== id.toString(),
-              );
-              await currentMember.save({ session });
-            }
-          }
-
-          await this.productRepository.create(
-            [
-              {
-                _id: product._id,
-                name: product.name,
-                category: product.category,
-                attributes: product.attributes,
-                status: updateProductDto.status || product.status,
-                recoverable: product.recoverable,
-                assignedEmail: '',
-                assignedMember: '',
-                lastAssigned: product.assignedMember,
-                acquisitionDate: product.acquisitionDate,
-                location: updateProductDto.location || product.location,
-                isDeleted: product.isDeleted,
-              },
-            ],
-            { session },
-          );
-          // Actualizar producto en products
-        } else {
-          await this.productRepository.updateOne(
-            { _id: id },
-            { $set: updateProductDto },
-            { session, runValidators: true, new: true, omitUndefined: true },
-          );
-        }
-
-        await session.commitTransaction();
-        session.endSession();
-
-        return { message: `Product with id "${id}" updated successfully` };
-      }
-
-      const memberProduct = await this.memberService.getProductByMembers(
-        id,
-        session,
-      );
-
-      if (memberProduct?.product) {
-        const member = memberProduct.member;
-        const productIndex = member.products.findIndex(
-          (prod) => prod._id!.toString() === id.toString(),
+        await this.updateProduct(
+          session,
+          product,
+          updateProductDto,
+          'products',
         );
-
-        if (productIndex !== -1) {
-          const currentProduct = member.products[productIndex];
-
-          const plainCurrentProduct = {
-            _id: currentProduct._id,
-            name: currentProduct.name,
-            category: currentProduct.category,
-            attributes: currentProduct.attributes,
-            status: currentProduct.status,
-            recoverable: currentProduct.recoverable,
-            assignedEmail: currentProduct.assignedEmail,
-            assignedMember: currentProduct.assignedMember,
-            acquisitionDate: currentProduct.acquisitionDate,
-            location: currentProduct.location,
-            isDeleted: currentProduct.isDeleted,
-          };
-
-          // Reasignar producto entre members
-
-          if (
-            updateProductDto.assignedEmail &&
-            updateProductDto.assignedEmail !== ''
-          ) {
-            const newMember = await this.memberService.findByEmail(
-              updateProductDto.assignedEmail,
-              session,
-            );
-
-            if (!newMember) {
-              throw new NotFoundException(
-                `Member with email "${updateProductDto.assignedEmail}" not found`,
-              );
-            }
-
-            member.products.splice(productIndex, 1);
-            await member.save({ session });
-
-            newMember.products.push({
-              ...plainCurrentProduct,
-              assignedEmail: updateProductDto.assignedEmail,
-              assignedMember: updateProductDto.assignedMember,
-              status: updateProductDto.status || plainCurrentProduct.status,
-              location:
-                updateProductDto.location || plainCurrentProduct.location,
-              lastAssigned: plainCurrentProduct.assignedMember,
-            });
-            await newMember.save({ session });
-
-            await session.commitTransaction();
-            session.endSession();
-
-            return {
-              message: `Product with id "${id}" reassigned successfully`,
-            };
-            //  desasignar producto de members a products
-          } else if (updateProductDto.assignedEmail === '') {
-            member.products.splice(productIndex, 1);
-            await member.save({ session });
-
-            await this.productRepository.create(
-              [
-                {
-                  ...plainCurrentProduct,
-                  lastAssigned: plainCurrentProduct.assignedMember,
-                  assignedEmail: '',
-                  assignedMember: '',
-                  status: updateProductDto.status || plainCurrentProduct.status,
-                  location:
-                    updateProductDto.location || plainCurrentProduct.location,
-                },
-              ],
-              { session },
-            );
-
-            await session.commitTransaction();
-            session.endSession();
-
-            return {
-              message: `Product with id "${id}" unassigned successfully`,
-            };
-            // Actualizar producto en members
-          } else {
-            Object.assign(member.products[productIndex], updateProductDto);
-            await member.save({ session });
-
-            await session.commitTransaction();
-            session.endSession();
-
-            return { message: `Product with id "${id}" updated successfully` };
-          }
+      } else {
+        const memberProduct = await this.memberService.getProductByMembers(
+          id,
+          session,
+        );
+        if (memberProduct?.product) {
+          await this.updateProduct(
+            session,
+            memberProduct.product as ProductDocument,
+            updateProductDto,
+            'members',
+            memberProduct.member,
+          );
+        } else {
+          throw new NotFoundException(`Product with id "${id}" not found`);
         }
       }
 
-      throw new NotFoundException(`Product with id "${id}" not found`);
+      await session.commitTransaction();
+      session.endSession();
+
+      console.log('update - End');
+      return { message: `Product with id "${id}" updated successfully` };
     } catch (error) {
-      if (session.inTransaction()) {
-        await session.abortTransaction();
-      }
+      await session.abortTransaction();
       session.endSession();
       throw error;
     }
