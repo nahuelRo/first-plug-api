@@ -19,7 +19,20 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto);
 
-    const { _id, email, name, image, tenantName } = user;
+    const {
+      _id,
+      email,
+      name,
+      image,
+      tenantName,
+      address,
+      apartment,
+      city,
+      country,
+      state,
+      zipCode,
+      phone,
+    } = user;
 
     const payload = {
       _id,
@@ -27,6 +40,13 @@ export class AuthService {
       name,
       image,
       tenantName,
+      address,
+      apartment,
+      city,
+      country,
+      state,
+      zipCode,
+      phone,
     };
 
     return {
