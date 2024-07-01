@@ -405,4 +405,46 @@ export class MembersService {
       'Unexcepted error, check server log',
     );
   }
+
+  private async assignColor(): Promise<string> {
+    const colors = [
+      '#FFE8E8',
+      '#D6E1FF',
+      '#F2E8FF',
+      '#D2FAEE',
+      '#FFF2D1',
+      '#E8F1FF',
+      '#FFEBE8',
+      '#E8FFF2',
+      '#FFF8E8',
+      '#F2D1FF',
+      '#4260F5',
+      '#E8FFD6',
+      '#FFD1F2',
+      '#D1FFE8',
+      '#D6FFD6',
+      '#FFD6D6',
+      '#E8D1FF',
+      '#D1F2FF',
+      '#FFF2E8',
+      '#FFE8D1',
+      '#D1FFE1',
+      '#F2D1E8',
+      '#D6F2FF',
+      '#FFF2FF',
+      '#E8D1D1',
+    ];
+
+    const teams = await this.teamRepository.find();
+    const usedColors = teams.map((team) => team.color);
+
+    for (const color of colors) {
+      if (!usedColors.includes(color)) {
+        return color;
+      }
+    }
+
+    const randomIndex = Math.floor(Math.random() * colors.length);
+    return colors[randomIndex];
+  }
 }
