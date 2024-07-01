@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req, Get } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateTenantDto } from '../tenants/dto';
 import { TenantsService } from '../tenants/tenants.service';
@@ -16,6 +16,10 @@ export class AuthController {
     private readonly tenantService: TenantsService,
   ) {}
 
+  @Post('user')
+  async getUserIngo(@Body() { id }: { id: string }) {
+    return await this.tenantService.getTenantById(id);
+  }
   @Post('register')
   async registerUser(@Body() createTenantDto: CreateTenantDto) {
     return await this.tenantService.create(createTenantDto);
