@@ -371,6 +371,7 @@ export class ProductsService {
     let product: ProductDocument | null =
       await this.productRepository.findById(productId);
     let currentMember: MemberDocument | null = null;
+    let isUnknownEmail = false;
 
     if (!product) {
       const memberProduct =
@@ -381,14 +382,24 @@ export class ProductsService {
       product = memberProduct.product as ProductDocument;
       currentMember = memberProduct.member as MemberDocument;
     } else {
-      currentMember = product.assignedEmail
-        ? await this.memberService.findByEmail(product.assignedEmail)
-        : null;
+      if (product.assignedEmail) {
+        currentMember = await this.memberService.findByEmailNotThrowError(
+          product.assignedEmail,
+        );
+        if (!currentMember) {
+          isUnknownEmail = true;
+        }
+      }
     }
 
     const members = await this.memberService.findAll();
+    let options;
 
-    const options = this.filterMembers(members, product?.assignedEmail || null);
+    if (isUnknownEmail) {
+      options = this.filterMembers(members, null);
+    } else {
+      options = this.filterMembers(members, product?.assignedEmail || null);
+    }
 
     return { product, options, currentMember };
   }
@@ -401,13 +412,7 @@ export class ProductsService {
 
     const members = await this.memberService.findAll();
 
-    let options;
-
-    if (product.assignedEmail === '') {
-      options = this.filterMembers(members, null);
-    } else if (product.assignedEmail !== '' && product.assignedMember === '') {
-      options = this.filterMembers(members, null, true);
-    }
+    const options = this.filterMembers(members, null);
 
     return { product, options };
   }
