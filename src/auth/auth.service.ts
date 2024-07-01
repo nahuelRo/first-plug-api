@@ -120,7 +120,24 @@ export class AuthService {
   }
 
   async refreshToken(user: any) {
-    const { _id, email, name, image, tenantName } = user;
+    const updatedUser = await this.tenantService.findByEmail(user.email);
+    if (!updatedUser) {
+      throw new UnauthorizedException();
+    }
+    const {
+      _id,
+      email,
+      name,
+      image,
+      tenantName,
+      address,
+      apartment,
+      city,
+      country,
+      state,
+      zipCode,
+      phone,
+    } = updatedUser;
 
     const payload = {
       _id,
@@ -128,20 +145,30 @@ export class AuthService {
       name,
       image,
       tenantName,
+      address,
+      apartment,
+      city,
+      country,
+      state,
+      zipCode,
+      phone,
     };
 
     return {
-      accessToken: await this.jwtService.signAsync(payload, {
-        expiresIn: '48h',
-        secret: process.env.JWTSECRETKEY,
-      }),
+      user: payload,
+      backendTokens: {
+        accessToken: await this.jwtService.signAsync(payload, {
+          expiresIn: '48h',
+          secret: process.env.JWTSECRETKEY,
+        }),
 
-      refreshToken: await this.jwtService.signAsync(payload, {
-        expiresIn: '7h',
-        secret: process.env.JWTREFRESHTOKENKEY,
-      }),
+        refreshToken: await this.jwtService.signAsync(payload, {
+          expiresIn: '7h',
+          secret: process.env.JWTREFRESHTOKENKEY,
+        }),
 
-      expiresIn: new Date().setTime(new Date().getTime() + EXPIRE_TIME),
+        expiresIn: new Date().setTime(new Date().getTime() + EXPIRE_TIME),
+      },
     };
   }
 

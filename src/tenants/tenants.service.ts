@@ -58,6 +58,23 @@ export class TenantsService {
   async getByTenantName(tenantName: string) {
     return await this.tenantRepository.findOne({ tenantName });
   }
+  async getTenantById(id: string) {
+    const user = await this.tenantRepository.findOne({ _id: id });
+    return {
+      _id: user?._id,
+      phone: user?.phone,
+      country: user?.country,
+      city: user?.city,
+      state: user?.state,
+      zipCode: user?.zipCode,
+      address: user?.address,
+      apartment: user?.apartment,
+      image: user?.image,
+      tenantName: user?.tenantName,
+      name: user?.name,
+      email: user?.email,
+    };
+  }
 
   async findByEmail(email: string) {
     return await this.tenantRepository.findOne({ email });
